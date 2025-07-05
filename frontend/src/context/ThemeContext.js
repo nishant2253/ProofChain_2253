@@ -3,26 +3,18 @@ import React, { createContext, useState, useEffect } from "react";
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
 
-  // Initialize theme based on user preference or system preference
+  // Initialize theme based on user preference or default to dark
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else if (savedTheme === "light") {
+    if (savedTheme === "light") {
       setIsDarkMode(false);
-      document.documentElement.classList.remove("dark");
+      document.body.setAttribute("data-theme", "light");
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      setIsDarkMode(prefersDark);
-      if (prefersDark) {
-        document.documentElement.classList.add("dark");
-      }
+      // Default to dark mode
+      setIsDarkMode(true);
+      document.body.setAttribute("data-theme", "dark");
     }
   }, []);
 
@@ -31,10 +23,10 @@ export const ThemeProvider = ({ children }) => {
     setIsDarkMode((prevMode) => {
       const newMode = !prevMode;
       if (newMode) {
-        document.documentElement.classList.add("dark");
+        document.body.setAttribute("data-theme", "dark");
         localStorage.setItem("theme", "dark");
       } else {
-        document.documentElement.classList.remove("dark");
+        document.body.setAttribute("data-theme", "light");
         localStorage.setItem("theme", "light");
       }
       return newMode;
