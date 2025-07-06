@@ -1,131 +1,130 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github } from "lucide-react";
+import useWallet from "../../hooks/useWallet";
 import useTheme from "../../hooks/useTheme";
-import ThemeToggle from "../ThemeToggle";
 import WalletConnect from "../WalletConnect";
+import ThemeToggle from "../ThemeToggle";
 
 const Layout = ({ children }) => {
-  const location = useLocation();
-  const { isDarkMode } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Navigation items
-  const navItems = [
-    { path: "/", label: "Home" },
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/submit", label: "Submit Content" },
-    { path: "/profile", label: "Profile" },
-  ];
+  const { isConnected } = useWallet();
+  const { isDarkMode } = useTheme();
+  const location = useLocation();
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
+  const navigation = [
+    { name: "Home", href: "/" },
+    { name: "Dashboard", href: "/dashboard", requiresAuth: true },
+    { name: "Submit Content", href: "/submit", requiresAuth: true },
+    { name: "Profile", href: "/profile", requiresAuth: true },
+  ];
+
+  const filteredNavigation = navigation.filter(
+    (item) => !item.requiresAuth || isConnected
+  );
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="header sticky top-0 w-full z-40">
-        <nav className="max-w-7xl mx-auto flex items-center header-nav justify-between px-6 py-4">
+      <header 
+        className="header sticky top-0 z-50"
+        style={{
+          background: 'var(--header-bg)',
+          boxShadow: isDarkMode ? '0 2px 16px 0 #1e224010' : '0 1px 0 var(--divider)',
+          backdropFilter: 'blur(14px)'
+        }}
+      >
+        <nav className="w-full max-w-7xl mx-auto px-6 py-4 flex items-center justify-between header-nav">
           {/* Logo */}
-          <div className="flex items-center gap-3 slide-in-x">
-            <span
-              className="flex items-center justify-center rounded-2xl shadow-xl logo-bg"
-              style={{ 
-                padding: "0.62rem 1.08rem",
+          <Link to="/" className="flex items-center fade-in" style={{ animationDelay: '0.1s' }}>
+            <div 
+              className="logo-bg w-10 h-10 rounded-xl flex items-center justify-center mr-3"
+              style={{
                 background: isDarkMode 
-                  ? "linear-gradient(120deg, #5be2ff33, #b388fc33)" 
-                  : "linear-gradient(120deg, #e3f2fd33, #bbdefb22)"
+                  ? 'linear-gradient(120deg, #5be2ff33, #b388fc33)'
+                  : 'linear-gradient(120deg, #e3f2fd33, #bbdefb22)'
               }}
             >
-              <svg width="36" height="36" viewBox="0 0 28 28" fill="none">
-                <rect
-                  x="3"
-                  y="3"
-                  width="22"
-                  height="22"
-                  rx="5.5"
-                  stroke="var(--accent-blue)"
-                  strokeWidth="2.3"
-                />
-                <path
-                  d="M9 20L20 9"
-                  stroke="var(--accent-purple)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <circle cx="14" cy="14" r="2.7" fill="var(--accent-blue)" />
-              </svg>
-            </span>
-            <span
-              className="text-3xl sm:text-4xl font-thin tracking-tight"
+              <span 
+                className="text-xl font-bold"
+                style={{ 
+                  color: 'var(--accent-blue)',
+                  fontSize: '1.2rem',
+                  fontWeight: '600'
+                }}
+              >
+                PC
+              </span>
+            </div>
+            <span 
+              className="text-2xl font-light"
               style={{
-                color: "var(--accent-blue)",
-                letterSpacing: "-0.03em",
-                fontWeight: 300,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.03em',
+                fontWeight: '300'
               }}
             >
               ProofChain
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center nav-items gap-8 text-base font-thin fade-in">
-            {navItems.map((item) => (
+          <div className="hidden md:flex items-center nav-items gap-8 text-base font-thin fade-in" style={{ animationDelay: '0.18s', fontWeight: '300' }}>
+            {filteredNavigation.map((item) => (
               <Link
-                key={item.path}
-                to={item.path}
-                className={`nav-link ${
-                  location.pathname === item.path ? "active" : ""
-                }`}
+                key={item.name}
+                to={item.href}
+                className="nav-link"
               >
-                {item.label}
+                {item.name}
               </Link>
             ))}
           </div>
 
-          {/* Right Section */}
-          <div className="hidden md:flex items-center gap-3">
-            <WalletConnect />
+          {/* Right side */}
+          <div className="flex items-center gap-3">
             <ThemeToggle />
-          </div>
+            <WalletConnect />
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-            style={{ color: "var(--text-main)" }}
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-md"
+              style={{ color: 'var(--text-main)' }}
             >
-              {isMobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {isMobileMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
+          </div>
         </nav>
-        
         <div className="divider"></div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Navigation */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
@@ -133,34 +132,18 @@ const Layout = ({ children }) => {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden"
-              style={{ background: "var(--header-bg)" }}
+              style={{ background: 'var(--header-bg)' }}
             >
-              <div className="max-w-7xl mx-auto px-6 py-4 space-y-4">
-                {/* Mobile Navigation */}
-                <div className="flex flex-col space-y-4">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`nav-link ${
-                        location.pathname === item.path ? "active" : ""
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Mobile Actions */}
-                <div className="flex flex-col space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <WalletConnect />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: "var(--text-sub)" }}>
-                      Theme
-                    </span>
-                    <ThemeToggle />
-                  </div>
-                </div>
+              <div className="px-6 py-4 space-y-2">
+                {filteredNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="nav-link block"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
               </div>
             </motion.div>
           )}
@@ -168,42 +151,34 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-14 pb-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.3 }}
-        >
-          {children}
-        </motion.div>
-      </main>
+      <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="w-full mt-auto pt-14 pb-7 px-6 text-center fade-in">
-        <div
-          className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 divider pb-5"
-          style={{ fontWeight: 300 }}
-        >
-          <div className="flex gap-5 mb-3 md:mb-0">
-            <a
-              href="https://github.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer-link"
-              aria-label="GitHub"
-            >
-              <Github className="w-5 h-5" />
+      <footer 
+        className="w-full max-w-7xl mx-auto px-6 py-8"
+        style={{ borderTop: '1px solid var(--divider)' }}
+      >
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center space-x-4 mb-4 md:mb-0">
+            <a href="#" className="footer-link" style={{ color: 'var(--text-sub)' }}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
             </a>
-            <a href="/docs" className="footer-link">
-              Documentation
-            </a>
-            <a href="/privacy" className="footer-link">
-              Privacy Policy
-            </a>
+            <a href="#" className="footer-link" style={{ color: 'var(--text-sub)' }}>Documentation</a>
+            <a href="#" className="footer-link" style={{ color: 'var(--text-sub)' }}>Privacy Policy</a>
           </div>
-          <span className="text-xs font-thin" style={{ color: "var(--text-sub)" }}>
-            &copy; {new Date().getFullYear()} ProofChain. All rights reserved.
+          <span className="text-xs font-thin" style={{ color: 'var(--text-sub)' }}>
+            &copy; 2025 ProofChain. All rights reserved.
           </span>
         </div>
       </footer>

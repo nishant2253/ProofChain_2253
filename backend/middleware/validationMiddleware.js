@@ -93,12 +93,15 @@ const schemas = {
     stakeAmount: Joi.string().required(),
     merkleProof: Joi.array().items(Joi.string()).required(),
     transactionHash: Joi.string().required(),
+    salt: Joi.string().optional(), // Salt is stored separately for reveal phase
+    blockNumber: Joi.number().integer().optional(),
   }),
 
   revealVote: Joi.object({
     vote: Joi.number().integer().min(0).max(2).required(),
     confidence: Joi.number().integer().min(1).max(10).required(),
     salt: Joi.string().required(),
+    transactionHash: Joi.string().optional(),
   }),
 
   // Token schemas

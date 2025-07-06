@@ -18,15 +18,23 @@ const { ethers } = require("ethers");
 const createNewContent = asyncHandler(async (req, res) => {
   const { title, description, contentType, votingDuration, tags } = req.body;
 
-  if (!title || !req.files || !req.files.file) {
+  if (!title) {
     res.status(400);
-    throw new Error("Title and file are required");
+    throw new Error("Title is required");
   }
 
-  // Get file from request
-  const file = req.files.file;
-  const fileBuffer = file.data;
-  const fileName = file.name;
+  // File is optional - check if it exists
+  let file = null;
+  let fileBuffer = null;
+  let fileName = null;
+  
+  if (req.files && req.files.file) {
+    file = req.files.file;
+    fileBuffer = file.data;
+    fileName = file.name;
+  }
+
+  // File handling is now done above
 
   let wallet;
 
@@ -126,7 +134,7 @@ const listContent = asyncHandler(async (req, res) => {
  */
 const commitVoteForContent = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { vote, confidence, tokenType, stakeAmount, merkleProof, transactionHash } = req.body;
+  const { vote, confidence, tokenType, stakeAmount, merkleProof, transactionHash, salt, blockNumber } = req.body;
 
   // In development mode, we'll provide a mock merkleProof if it's not provided
   let proofToUse = merkleProof;
@@ -146,6 +154,9 @@ const commitVoteForContent = asyncHandler(async (req, res) => {
   console.log("  merkleProof:", merkleProof);
   console.log("  proofToUse:", proofToUse);
   console.log("  transactionHash:", transactionHash);
+  console.log("  salt:", salt);
+  console.log("  blockNumber:", blockNumber);
+  console.log("  user address:", req.user?.address);
 
   if (
     vote === undefined ||
@@ -161,14 +172,30 @@ const commitVoteForContent = asyncHandler(async (req, res) => {
     );
   }
 
+  // Convert MongoDB ObjectId to numeric contentId for smart contract
+  let contentId;
+  if (!isNaN(id)) {
+    contentId = parseInt(id);
+  } else {
+    // Convert MongoDB ObjectId to numeric value using hash
+    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(id));
+    contentId = ethers.BigNumber.from(hash).mod(ethers.BigNumber.from("999999999")).toNumber();
+  }
+  
+  console.log("Converting MongoDB ID to contentId for commit smart contract:");
+  console.log("  MongoDB ID:", id);
+  console.log("  Numeric contentId:", contentId);
+
   const result = await commitVote(
-    id,
+    contentId,
     parseInt(vote),
     parseInt(confidence),
     parseInt(tokenType),
     stakeAmount,
     proofToUse,
-    transactionHash
+    transactionHash,
+    req.user?.address,
+    salt
   );
 
   res.json(result);
@@ -195,8 +222,23 @@ const revealVoteForContent = asyncHandler(async (req, res) => {
   );
   const wallet = new ethers.Wallet(process.env.DEMO_PRIVATE_KEY, provider);
 
+  // Convert MongoDB ObjectId to numeric contentId for smart contract
+  let contentId;
+  if (!isNaN(id)) {
+    contentId = parseInt(id);
+  } else {
+    // Convert MongoDB ObjectId to numeric value using hash
+    const { ethers } = require("ethers");
+    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(id));
+    contentId = ethers.BigNumber.from(hash).mod(ethers.BigNumber.from("999999999")).toNumber();
+  }
+  
+  console.log("Converting MongoDB ID to contentId for smart contract:");
+  console.log("  MongoDB ID:", id);
+  console.log("  Numeric contentId:", contentId);
+
   const result = await revealVote(
-    id,
+    contentId,
     parseInt(vote),
     parseInt(confidence),
     salt,

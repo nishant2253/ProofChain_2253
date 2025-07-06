@@ -62,9 +62,13 @@ export const WalletProvider = ({ children }) => {
       // Call the backend to register/login the user
       const response = await axios.post(`${apiUrl}/users`, {
         address,
-        // In a real implementation, you would sign a message and include the signature
-        // signature: await signer.signMessage("Login to ProofChain"),
-        userData: {},
+        signature: null, // In a real implementation, you would sign a message
+        userData: {
+          username: `User_${address.substring(0, 8)}`,
+          email: null,
+          bio: null,
+          profileImageUrl: null
+        },
       });
 
       console.log("Authentication response:", response.data);
@@ -73,9 +77,20 @@ export const WalletProvider = ({ children }) => {
       if (response.data && response.data.token) {
         localStorage.setItem("authToken", response.data.token);
         console.log("JWT token stored in localStorage");
+        
+        // Verify token is stored
+        const storedToken = localStorage.getItem("authToken");
+        console.log("Stored token:", storedToken ? "Token exists" : "No token stored");
+      } else {
+        console.error("No token received from backend");
       }
     } catch (error) {
       console.error("Error authenticating with backend:", error);
+      console.error("Error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
     }
   };
 

@@ -227,6 +227,9 @@ const VotingInterface = ({ content, onVoteComplete }) => {
         selectedToken.decimals
       );
 
+      // Show MetaMask prompt message
+      setSuccess("Please confirm the transaction in MetaMask...");
+
       // Interact with smart contract
       const contract = getContract(signer);
 
@@ -253,6 +256,8 @@ const VotingInterface = ({ content, onVoteComplete }) => {
         );
       }
 
+      setSuccess("Transaction submitted! Waiting for confirmation...");
+      
       const receipt = await tx.wait();
       const transactionHash = receipt.transactionHash;
 
@@ -270,7 +275,7 @@ const VotingInterface = ({ content, onVoteComplete }) => {
       await submitVote(content._id, { ...commitData, type: "commit" });
 
       setSuccess(
-        "Vote committed successfully! Save your salt for the reveal phase."
+        `Vote committed successfully! Transaction: ${transactionHash.substring(0, 10)}... Save your salt for the reveal phase: ${salt}`
       );
 
       // Notify parent component
@@ -279,7 +284,28 @@ const VotingInterface = ({ content, onVoteComplete }) => {
       }
     } catch (err) {
       console.error("Error committing vote:", err);
-      setError(parseErrorMessage(err));
+      
+      // Enhanced error handling for MetaMask and blockchain errors
+      let errorMessage = "Failed to commit vote";
+      
+      if (err.code === 4001) {
+        errorMessage = "Transaction rejected by user in MetaMask";
+      } else if (err.code === -32603) {
+        errorMessage = "Internal JSON-RPC error. Please check your wallet connection.";
+      } else if (err.message?.includes('insufficient funds')) {
+        errorMessage = "Insufficient funds for transaction. Please check your wallet balance.";
+      } else if (err.message?.includes('user rejected')) {
+        errorMessage = "Transaction rejected by user";
+      } else if (err.message?.includes('execution reverted')) {
+        errorMessage = "Transaction failed: " + (err.reason || "Smart contract execution reverted");
+      } else if (err.message?.includes('network')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else {
+        errorMessage = parseErrorMessage(err);
+      }
+      
+      setError(errorMessage);
+      setSuccess(null); // Clear any success messages
     } finally {
       setIsLoading(false);
     }

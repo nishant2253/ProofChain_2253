@@ -66,7 +66,7 @@ const WalletConnect = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleConnect}
-          className="btn-primary fade-in"
+          className="btn-primary wallet-connect-button"
         >
           Connect Wallet
         </motion.button>
@@ -77,21 +77,13 @@ const WalletConnect = () => {
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className={`
-                px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                px-3 py-1.5 rounded-lg text-sm font-medium
                 ${
                   SUPPORTED_CHAINS.find((chain) => chain.id === chainId)
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                 }
               `}
-              style={{
-                background: SUPPORTED_CHAINS.find((chain) => chain.id === chainId)
-                  ? "rgba(34, 197, 94, 0.1)"
-                  : "rgba(239, 68, 68, 0.1)",
-                color: SUPPORTED_CHAINS.find((chain) => chain.id === chainId)
-                  ? "var(--accent-blue)"
-                  : "#ef4444",
-              }}
             >
               {isChainSwitching ? (
                 <div className="flex items-center">
@@ -110,23 +102,20 @@ const WalletConnect = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute right-0 mt-2 w-48 glass py-1 z-50"
+                  className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50"
                 >
                   {SUPPORTED_CHAINS.map((chain) => (
                     <button
                       key={chain.id}
                       onClick={() => handleChainSwitch(chain.id)}
                       className={`
-                        w-full px-4 py-2 text-left text-sm transition-colors hover:bg-opacity-10
+                        w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700
                         ${
                           chainId === chain.id
-                            ? "font-medium"
-                            : ""
+                            ? "text-primary-600 dark:text-primary-400 font-medium"
+                            : "text-gray-700 dark:text-gray-300"
                         }
                       `}
-                      style={{
-                        color: chainId === chain.id ? "var(--accent-blue)" : "var(--text-main)",
-                      }}
                     >
                       {chain.name}
                     </button>
@@ -140,12 +129,7 @@ const WalletConnect = () => {
           <div className="relative">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="px-4 py-2 rounded-lg font-medium transition-colors"
-              style={{
-                background: "var(--card-bg)",
-                color: "var(--text-main)",
-                border: "1px solid var(--divider)",
-              }}
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
             >
               {formatAddress(address)}
             </button>
@@ -157,15 +141,14 @@ const WalletConnect = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute right-0 mt-2 w-48 glass overflow-hidden z-50"
+                  className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden z-50"
                 >
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(address);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-opacity-10"
-                    style={{ color: "var(--text-main)" }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     Copy Address
                   </button>
@@ -174,8 +157,7 @@ const WalletConnect = () => {
                       disconnect();
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-opacity-10"
-                    style={{ color: "#ef4444" }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
                   >
                     Disconnect
                   </button>
@@ -193,11 +175,7 @@ const WalletConnect = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 p-3 rounded-md text-sm"
-            style={{
-              background: "rgba(239, 68, 68, 0.1)",
-              color: "#ef4444",
-            }}
+            className="absolute top-full left-0 right-0 mt-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md text-sm"
           >
             {error}
           </motion.div>

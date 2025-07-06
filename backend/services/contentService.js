@@ -309,14 +309,16 @@ const commitVote = async (
   tokenType,
   stakeAmount,
   merkleProof,
-  transactionHash
+  transactionHash,
+  userAddress,
+  providedSalt = null
 ) => {
   try {
-    // Generate random salt
-    const salt = Math.floor(Math.random() * 1000000000).toString();
+    // Use provided salt or generate random salt
+    const salt = providedSalt || Math.floor(Math.random() * 1000000000).toString();
 
     // Get signer address (from authenticated user)
-    const signerAddress = "0x1234567890123456789012345678901234567890"; // Placeholder, replace with req.user.address
+    const signerAddress = userAddress || "0x1234567890123456789012345678901234567890";
 
     // Generate commit hash (for internal record, not sent to blockchain by backend)
     const commitHash = generateCommitHash(

@@ -3,16 +3,19 @@ import React, { createContext, useState, useEffect } from "react";
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark theme
 
-  // Initialize theme based on user preference or default to dark
+  // Initialize theme based on user preference or system preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "light") {
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.body.setAttribute("data-theme", "dark");
+    } else if (savedTheme === "light") {
       setIsDarkMode(false);
       document.body.setAttribute("data-theme", "light");
     } else {
-      // Default to dark mode
+      // Default to dark theme like the design
       setIsDarkMode(true);
       document.body.setAttribute("data-theme", "dark");
     }

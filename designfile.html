@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProofChain – Decentralized Content Verification</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+      :root {
+        /* Dark theme variables */
+        --bg-gradient-dark: linear-gradient(
+          135deg,
+          #18143c 0%,
+          #1a2a5e 50%,
+          #232459 100%
+        );
+        --text-main-dark: #eaf6ff;
+        --text-sub-dark: #bcd2f7;
+        --accent-blue-dark: #5be2ff;
+        --accent-cyan-dark: #8ff8ff;
+        --accent-purple-dark: #b388fc;
+        --divider-dark: rgba(98, 114, 164, 0.15);
+        --header-bg-dark: rgba(20, 22, 40, 0.72);
+        --card-bg-dark: rgba(24, 26, 50, 0.93);
+        --btn-grad-dark: linear-gradient(90deg, #5be2ff 5%, #b388fc 95%);
+        --btn-grad-hover-dark: linear-gradient(90deg, #8ff8ff 5%, #b388fc 95%);
+        --shadow-dark: 0 4px 28px 0 #1a225788;
+
+        /* Light theme variables */
+        --bg-main-light: #ffffff;
+        --bg-secondary-light: #fafbfc;
+        --bg-tertiary-light: #f7f9fc;
+        --card-bg-light: #ffffff;
+        --shadow-card-light: 0 6px 32px 0 rgba(36, 42, 66, 0.1);
+        --text-heading-light: #1a202c;
+        --text-body-light: #4a5568;
+        --border-main-light: #e2e8f0;
+        --border-blue-light: #bbdefb;
+        --accent-blue-light: #0066ff;
+        --accent-cyan-light: #00b8d4;
+        --accent-blue-lighter: #4fc3f7;
+        --accent-purple-light: #8b5cf6;
+        --gradient-hero-light: linear-gradient(
+          120deg,
+          #e3f2fd 0%,
+          #ffffff 100%
+        );
+
+        /* Default to dark theme */
+        --bg-gradient: var(--bg-gradient-dark);
+        --text-main: var(--text-main-dark);
+        --text-sub: var(--text-sub-dark);
+        --accent-blue: var(--accent-blue-dark);
+        --accent-cyan: var(--accent-cyan-dark);
+        --accent-purple: var(--accent-purple-dark);
+        --divider: var(--divider-dark);
+        --header-bg: var(--header-bg-dark);
+        --card-bg: var(--card-bg-dark);
+        --btn-grad: var(--btn-grad-dark);
+        --btn-grad-hover: var(--btn-grad-hover-dark);
+        --shadow: var(--shadow-dark);
+      }
+
+      [data-theme="light"] {
+        --bg-gradient: var(--bg-main-light);
+        --text-main: var(--text-heading-light);
+        --text-sub: var(--text-body-light);
+        --accent-blue: var(--accent-blue-light);
+        --accent-cyan: var(--accent-cyan-light);
+        --accent-purple: var(--accent-purple-light);
+        --divider: var(--border-main-light);
+        --header-bg: rgba(255, 255, 255, 0.8);
+        --card-bg: var(--card-bg-light);
+        --btn-grad: linear-gradient(90deg, #0066ff 0%, #00b8d4 100%);
+        --btn-grad-hover: linear-gradient(90deg, #4fc3f7 0%, #29b6f6 100%);
+        --shadow: var(--shadow-card-light);
+      }
+
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        font-weight: 300;
+        background: var(--bg-gradient);
+        color: var(--text-main);
+        min-height: 100vh;
+        transition: background 0.5s, color 0.3s;
+        overflow-x: hidden;
+      }
+
+      .fade-in {
+        opacity: 0;
+        transform: translateY(22px) scale(0.985);
+        animation: fade-in 0.8s cubic-bezier(0.68, 0, 0.22, 1) forwards;
+      }
+      .fade-in-blur {
+        opacity: 0;
+        filter: blur(18px);
+        animation: fade-in-blur 0.86s cubic-bezier(0.62, 0, 0.24, 1) forwards;
+      }
+      .slide-in-x {
+        opacity: 0;
+        transform: translateX(-36px);
+        animation: slide-in-x 0.7s cubic-bezier(0.65, 0, 0.24, 1) forwards;
+      }
+
+      @keyframes fade-in {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes fade-in-blur {
+        to {
+          opacity: 1;
+          filter: none;
+        }
+      }
+      @keyframes slide-in-x {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .divider {
+        border-bottom: 1px solid var(--divider);
+      }
+
+      .btn-primary {
+        background: var(--btn-grad);
+        color: var(--text-main);
+        font-weight: 400;
+        border-radius: 0.72rem;
+        padding: 0.7rem 1.8rem;
+        font-size: 1.12rem;
+        transition: background 0.18s, box-shadow 0.12s, filter 0.15s;
+        box-shadow: 0 0 14px 0 var(--accent-blue) 33;
+        letter-spacing: -0.01em;
+        outline: none;
+        border: none;
+        font-family: inherit;
+        font-weight: 300;
+        cursor: pointer;
+      }
+      .btn-primary:hover {
+        background: var(--btn-grad-hover);
+        filter: brightness(1.08);
+        box-shadow: 0 0 20px 2px var(--accent-blue) 77;
+      }
+
+      [data-theme="light"] .btn-primary {
+        color: #ffffff;
+      }
+
+      .btn-secondary {
+        border: 1.5px solid var(--accent-blue);
+        color: var(--accent-blue);
+        background: transparent;
+        border-radius: 0.72rem;
+        padding: 0.7rem 1.7rem;
+        font-size: 1.09rem;
+        font-weight: 300;
+        transition: background 0.17s, color 0.16s, border 0.17s,
+          box-shadow 0.14s;
+        outline: none;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .btn-secondary:hover {
+        background: var(--accent-blue) 11;
+        color: var(--accent-cyan);
+        border-color: var(--accent-cyan);
+        box-shadow: 0 0 8px 2px var(--accent-blue) 22;
+      }
+
+      [data-theme="light"] .btn-secondary {
+        background: #f7f9fc;
+        color: var(--accent-purple);
+        border-color: #a78bfa;
+      }
+      [data-theme="light"] .btn-secondary:hover {
+        background: #f3f0fa;
+        color: var(--accent-purple);
+        border-color: var(--accent-purple);
+      }
+
+      .glass {
+        background: var(--card-bg);
+        border-radius: 1.2rem;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      [data-theme="light"] .glass {
+        border: 1px solid var(--divider);
+      }
+
+      /* Theme toggle styles */
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(48, 60, 100, 0.13);
+        cursor: pointer;
+        transition: background 0.18s, box-shadow 0.18s;
+        box-shadow: 0 0 0 0 var(--accent-blue) 00;
+        outline: none;
+        margin-left: 0.2rem;
+        border: none;
+      }
+      .theme-toggle:focus-visible {
+        box-shadow: 0 0 0 3px var(--accent-blue) 66;
+      }
+      .theme-toggle:hover {
+        background: var(--accent-blue) 11;
+        box-shadow: 0 0 14px 0 var(--accent-blue) 44;
+      }
+
+      [data-theme="light"] .theme-toggle {
+        background: rgba(0, 102, 255, 0.08);
+      }
+      [data-theme="light"] .theme-toggle:hover {
+        background: rgba(0, 102, 255, 0.12);
+      }
+
+      /* Header styles */
+      .header {
+        background: var(--header-bg);
+        box-shadow: 0 2px 16px 0 #1e224010;
+        backdrop-filter: blur(14px);
+      }
+
+      [data-theme="light"] .header {
+        background: var(--header-bg);
+        box-shadow: 0 1px 0 var(--divider);
+      }
+
+      .nav-link {
+        color: var(--text-main);
+        font-weight: 300;
+        transition: color 0.16s, background 0.16s;
+        border-radius: 0.44rem;
+        padding: 0.5rem 0.7rem;
+        outline: none;
+        text-decoration: none;
+      }
+      .nav-link:hover,
+      .nav-link:focus-visible {
+        color: var(--accent-blue);
+        text-decoration: underline;
+        background: var(--accent-blue) 11;
+      }
+
+      [data-theme="light"] .nav-link {
+        color: var(--text-sub);
+      }
+
+      /* Responsive nav */
+      @media (max-width: 900px) {
+        .hero-section {
+          flex-direction: column;
+          gap: 3.5rem;
+        }
+        .hero-left,
+        .hero-right {
+          width: 100% !important;
+        }
+        .header-nav {
+          flex-direction: column;
+          gap: 1.35rem;
+        }
+        .nav-items {
+          gap: 2.2rem;
+        }
+      }
+      @media (min-width: 901px) {
+        .hero-section {
+          flex-direction: row;
+        }
+        .nav-items {
+          gap: 2.9rem;
+        }
+      }
+
+      /* Hide scrollbar for blockchain visual */
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* SVG animation styles */
+      @keyframes cube-pulse {
+        0%,
+        100% {
+          filter: drop-shadow(0 0 14px var(--accent-blue) 77);
+        }
+        50% {
+          filter: drop-shadow(0 0 34px var(--accent-cyan) cc);
+        }
+      }
+      @keyframes node-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.13);
+        }
+      }
+      #cubes polygon,
+      #cubes rect {
+        transition: filter 0.29s;
+      }
+      #cubes polygon {
+        animation: cube-pulse 2.9s infinite cubic-bezier(0.68, 0, 0.24, 1)
+          alternate;
+      }
+      #cubes rect {
+        animation: node-pulse 2s infinite cubic-bezier(0.62, 0, 0.38, 1)
+          alternate;
+      }
+
+      [data-theme="light"] #cubes polygon {
+        animation: cube-pulse-light 3s infinite cubic-bezier(0.67, 0, 0.24, 1)
+          alternate;
+      }
+      @keyframes cube-pulse-light {
+        0%,
+        100% {
+          filter: drop-shadow(0 0 10px #4fc3f7cc);
+        }
+        50% {
+          filter: drop-shadow(0 0 32px #29b6f6bb);
+        }
+      }
+
+      .footer-link {
+        color: var(--text-sub);
+        transition: color 0.16s, background 0.16s;
+        border-radius: 0.35rem;
+        padding: 0.21rem 0.32rem;
+        outline: none;
+        text-decoration: none;
+      }
+      .footer-link:hover,
+      .footer-link:focus-visible {
+        color: var(--accent-blue);
+        background: var(--accent-blue) 11;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen flex flex-col" data-theme="dark">
+    <!-- Header -->
+    <header class="header sticky top-0 w-full z-40">
+      <nav
+        class="max-w-7xl mx-auto flex items-center header-nav justify-between px-6 py-4"
+        style="gap: 2.5rem"
+      >
+        <!-- Logo -->
+        <div
+          class="flex items-center gap-3 slide-in-x"
+          style="animation-delay: 0.08s"
+        >
+          <span
+            class="flex items-center justify-center rounded-2xl shadow-xl logo-bg"
+            style="padding: 0.62rem 1.08rem"
+          >
+            <svg width="36" height="36" viewBox="0 0 28 28" fill="none">
+              <rect
+                x="3"
+                y="3"
+                width="22"
+                height="22"
+                rx="5.5"
+                stroke="var(--accent-blue)"
+                stroke-width="2.3"
+              />
+              <path
+                d="M9 20L20 9"
+                stroke="var(--accent-purple)"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <circle cx="14" cy="14" r="2.7" fill="var(--accent-blue)" />
+            </svg>
+          </span>
+          <span
+            class="text-3xl sm:text-4xl font-thin tracking-tight"
+            style="
+              color: var(--accent-blue);
+              letter-spacing: -0.03em;
+              font-weight: 300;
+            "
+            >ProofChain</span
+          >
+        </div>
+        <!-- Nav Links -->
+        <div
+          class="flex items-center nav-items gap-8 text-base font-thin fade-in"
+          style="animation-delay: 0.18s; font-weight: 300"
+        >
+          <a href="#" class="nav-link">Home</a>
+          <a href="#" class="nav-link">Dashboard</a>
+          <a href="#" class="nav-link">Submit Content</a>
+          <a href="#" class="nav-link">Profile</a>
+        </div>
+        <!-- Right: Theme toggle -->
+        <div class="flex items-center gap-3">
+          <button
+            id="themeToggle"
+            class="theme-toggle fade-in"
+            aria-label="Toggle theme"
+            style="animation-delay: 0.21s"
+          >
+            <i
+              data-lucide="moon"
+              class="w-5 h-5"
+              style="color: var(--accent-blue)"
+            ></i>
+          </button>
+        </div>
+      </nav>
+      <div class="divider"></div>
+    </header>
+
+    <!-- Hero Section -->
+    <section
+      class="w-full max-w-7xl mx-auto px-6 pt-14 pb-10 flex hero-section items-center gap-10 sm:gap-16 z-10"
+      style="min-height: 66vh"
+    >
+      <!-- Left: Text -->
+      <div
+        class="flex-1 hero-left flex flex-col items-start justify-center fade-in-blur"
+        style="animation-delay: 0.2s; min-width: 0"
+      >
+        <h1
+          class="text-4xl sm:text-5xl lg:text-6xl font-thin tracking-tight mb-5"
+          style="
+            color: var(--text-main);
+            font-weight: 300;
+            letter-spacing: -0.045em;
+            line-height: 1.14;
+          "
+        >
+          Decentralized<br />
+          <span
+            style="
+              color: var(--accent-blue);
+              font-weight: 300;
+              letter-spacing: -0.045em;
+            "
+            >Content Verification</span
+          >
+        </h1>
+        <p
+          class="text-lg md:text-xl font-thin mb-9"
+          style="font-weight: 300; max-width: 520px; color: var(--text-sub)"
+        >
+          Ensure authenticity, prevent fraud, and build trust through
+          blockchain-powered content verification.
+        </p>
+        <div class="flex gap-4">
+          <button class="btn-primary fade-in" style="animation-delay: 0.36s">
+            Submit Content
+          </button>
+          <button class="btn-secondary fade-in" style="animation-delay: 0.43s">
+            Learn More
+          </button>
+        </div>
+      </div>
+      <!-- Right: Blockchain Visual -->
+      <div
+        class="flex-1 hero-right flex items-center justify-center fade-in-blur hide-scrollbar"
+        style="animation-delay: 0.28s; min-width: 0; width: 100%"
+      >
+        <!-- Animated 3D Blockchain Cubes SVG -->
+        <div
+          class="relative w-full max-w-[440px] aspect-square mx-auto select-none pointer-events-none glass blockchain-container"
+        >
+          <svg
+            id="blockchain-svg"
+            viewBox="0 0 440 440"
+            fill="none"
+            class="w-full h-full"
+            style="overflow: visible"
+          >
+            <!-- Glowing background gradient -->
+            <defs>
+              <radialGradient id="bgGlow" cx="50%" cy="50%" r="70%">
+                <stop
+                  offset="0%"
+                  stop-color="var(--accent-blue)"
+                  stop-opacity="0.33"
+                />
+                <stop
+                  offset="65%"
+                  stop-color="var(--text-main)"
+                  stop-opacity="0"
+                />
+              </radialGradient>
+              <radialGradient id="bgGlowLight" cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stop-color="#e3f2fd" stop-opacity="0.82" />
+                <stop offset="60%" stop-color="#ffffff" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="cubeBlue" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="var(--accent-blue)" />
+                <stop offset="1" stop-color="var(--accent-purple)" />
+              </linearGradient>
+              <linearGradient id="cubeCyan" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="var(--accent-cyan)" />
+                <stop offset="1" stop-color="var(--accent-blue)" />
+              </linearGradient>
+              <linearGradient id="cubeBlueLight" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#4fc3f7" />
+                <stop offset="1" stop-color="#29b6f6" />
+              </linearGradient>
+              <linearGradient id="cubeCyanLight" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#e3f2fd" />
+                <stop offset="1" stop-color="#4fc3f7" />
+              </linearGradient>
+            </defs>
+            <!-- Background Glow -->
+            <ellipse
+              cx="220"
+              cy="220"
+              rx="190"
+              ry="190"
+              fill="url(#bgGlow)"
+              class="bg-glow-dark"
+            />
+            <ellipse
+              cx="220"
+              cy="220"
+              rx="190"
+              ry="190"
+              fill="url(#bgGlowLight)"
+              class="bg-glow-light"
+              style="display: none"
+            />
+            <!-- Blockchain cubes and edges -->
+            <g
+              id="edges"
+              stroke="var(--accent-blue)"
+              stroke-width="2.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              opacity="0.6"
+            >
+              <line x1="140" y1="140" x2="220" y2="85" />
+              <line x1="220" y1="85" x2="300" y2="140" />
+              <line x1="300" y1="140" x2="220" y2="195" />
+              <line x1="220" y1="195" x2="140" y2="140" />
+              <line x1="140" y1="140" x2="220" y2="255" />
+              <line x1="220" y1="255" x2="220" y2="195" />
+              <line x1="220" y1="255" x2="300" y2="320" />
+              <line x1="300" y1="320" x2="300" y2="140" />
+              <line x1="220" y1="255" x2="140" y2="320" />
+              <line x1="140" y1="320" x2="140" y2="140" />
+              <line x1="300" y1="320" x2="220" y2="375" />
+              <line x1="220" y1="375" x2="140" y2="320" />
+            </g>
+            <!-- Cubes -->
+            <g id="cubes">
+              <g>
+                <polygon
+                  points="220,85 300,140 220,195 140,140"
+                  fill="url(#cubeBlue)"
+                  class="cube-blue-dark"
+                />
+                <polygon
+                  points="220,85 300,140 220,195 140,140"
+                  fill="url(#cubeBlueLight)"
+                  class="cube-blue-light"
+                  style="display: none"
+                />
+                <polygon
+                  points="220,255 300,320 220,375 140,320"
+                  fill="url(#cubeCyan)"
+                  class="cube-cyan-dark"
+                />
+                <polygon
+                  points="220,255 300,320 220,375 140,320"
+                  fill="url(#cubeCyanLight)"
+                  class="cube-cyan-light"
+                  style="display: none"
+                />
+                <polygon
+                  points="140,140 220,195 220,255 140,320"
+                  fill="#232459"
+                  opacity="0.94"
+                  class="cube-side-dark"
+                />
+                <polygon
+                  points="140,140 220,195 220,255 140,320"
+                  fill="#f7f9fc"
+                  opacity="0.96"
+                  class="cube-side-light"
+                  style="display: none"
+                />
+                <polygon
+                  points="300,140 220,195 220,255 300,320"
+                  fill="#232459"
+                  opacity="0.96"
+                  class="cube-side-dark"
+                />
+                <polygon
+                  points="300,140 220,195 220,255 300,320"
+                  fill="#f7f9fc"
+                  opacity="0.97"
+                  class="cube-side-light"
+                  style="display: none"
+                />
+              </g>
+              <!-- Small cubes (nodes) at corners -->
+              <g>
+                <rect
+                  x="214"
+                  y="79"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-blue)"
+                  opacity="0.98"
+                />
+                <rect
+                  x="294"
+                  y="134"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-purple)"
+                  opacity="0.95"
+                />
+                <rect
+                  x="214"
+                  y="369"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-cyan)"
+                  opacity="0.95"
+                />
+                <rect
+                  x="134"
+                  y="314"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-purple)"
+                  opacity="0.96"
+                />
+                <rect
+                  x="134"
+                  y="134"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-blue)"
+                  opacity="0.97"
+                />
+                <rect
+                  x="294"
+                  y="314"
+                  width="12"
+                  height="12"
+                  rx="3"
+                  fill="var(--accent-blue)"
+                  opacity="0.97"
+                />
+              </g>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer
+      class="w-full mt-auto pt-14 pb-7 px-6 text-center fade-in"
+      style="animation-delay: 1.1s"
+    >
+      <div
+        class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 divider pb-5"
+        style="font-weight: 300"
+      >
+        <div class="flex gap-5 mb-3 md:mb-0">
+          <a
+            href="https://github.com/"
+            target="_blank"
+            class="footer-link"
+            aria-label="GitHub"
+          >
+            <i data-lucide="github" class="w-5 h-5"></i>
+          </a>
+          <a href="#" class="footer-link">Documentation</a>
+          <a href="#" class="footer-link">Privacy Policy</a>
+        </div>
+        <span class="text-xs font-thin" style="color: var(--text-sub)"
+          >&copy; 2025 ProofChain. All rights reserved.</span
+        >
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+      window.onload = () => {
+        lucide.createIcons();
+        // Animations reveal sequence
+        setTimeout(() => {
+          document
+            .querySelectorAll(".fade-in,.fade-in-blur,.slide-in-x")
+            .forEach((el, i) => {
+              el.style.animationDelay = 0.07 * i + 0.11 + "s";
+              el.classList.add("!opacity-100");
+            });
+        }, 60);
+      };
+
+      // Theme toggle functionality
+      const themeToggle = document.getElementById("themeToggle");
+      const body = document.body;
+      let isDark = true;
+
+      // Logo background update
+      const updateLogoBackground = (isDark) => {
+        const logoBg = document.querySelector(".logo-bg");
+        if (isDark) {
+          logoBg.style.background =
+            "linear-gradient(120deg, #5be2ff33, #b388fc33)";
+        } else {
+          logoBg.style.background =
+            "linear-gradient(120deg, #e3f2fd33, #bbdefb22)";
+        }
+      };
+
+      // Blockchain visual update
+      const updateBlockchainVisual = (isDark) => {
+        const container = document.querySelector(".blockchain-container");
+        const bgGlowDark = document.querySelector(".bg-glow-dark");
+        const bgGlowLight = document.querySelector(".bg-glow-light");
+        const cubeBlueDark = document.querySelectorAll(".cube-blue-dark");
+        const cubeBlueLight = document.querySelectorAll(".cube-blue-light");
+        const cubeCyanDark = document.querySelectorAll(".cube-cyan-dark");
+        const cubeCyanLight = document.querySelectorAll(".cube-cyan-light");
+        const cubeSideDark = document.querySelectorAll(".cube-side-dark");
+        const cubeSideLight = document.querySelectorAll(".cube-side-light");
+
+        if (isDark) {
+          container.style.background = "";
+          container.style.border = "";
+          bgGlowDark.style.display = "block";
+          bgGlowLight.style.display = "none";
+          cubeBlueDark.forEach((el) => (el.style.display = "block"));
+          cubeBlueLight.forEach((el) => (el.style.display = "none"));
+          cubeCyanDark.forEach((el) => (el.style.display = "block"));
+          cubeCyanLight.forEach((el) => (el.style.display = "none"));
+          cubeSideDark.forEach((el) => (el.style.display = "block"));
+          cubeSideLight.forEach((el) => (el.style.display = "none"));
+        } else {
+          container.style.background =
+            "linear-gradient(120deg, #e3f2fd 0%, #ffffff 100%)";
+          container.style.border = "1.5px solid #bbdefb";
+          container.style.boxShadow = "0 8px 40px #29b6f61a";
+          bgGlowDark.style.display = "none";
+          bgGlowLight.style.display = "block";
+          cubeBlueDark.forEach((el) => (el.style.display = "none"));
+          cubeBlueLight.forEach((el) => (el.style.display = "block"));
+          cubeCyanDark.forEach((el) => (el.style.display = "none"));
+          cubeCyanLight.forEach((el) => (el.style.display = "block"));
+          cubeSideDark.forEach((el) => (el.style.display = "none"));
+          cubeSideLight.forEach((el) => (el.style.display = "block"));
+        }
+      };
+
+      themeToggle.addEventListener("click", () => {
+        isDark = !isDark;
+
+        if (isDark) {
+          body.setAttribute("data-theme", "dark");
+          themeToggle.innerHTML =
+            '<i data-lucide="moon" class="w-5 h-5" style="color: var(--accent-blue)"></i>';
+        } else {
+          body.setAttribute("data-theme", "light");
+          themeToggle.innerHTML =
+            '<i data-lucide="sun" class="w-5 h-5" style="color: var(--accent-blue)"></i>';
+        }
+
+        updateLogoBackground(isDark);
+        updateBlockchainVisual(isDark);
+        lucide.createIcons();
+      });
+
+      // Initialize theme
+      updateLogoBackground(isDark);
+      updateBlockchainVisual(isDark);
+    </script>
+  </body>
+</html>

@@ -5,6 +5,7 @@ const {
   updatePrices,
   convertToUSD,
   initializeTokens,
+  getDistribution,
 } = require("../controllers/tokenController");
 const { protect } = require("../middleware/authMiddleware");
 const { admin } = require("../middleware/adminMiddleware");
@@ -15,6 +16,7 @@ const router = express.Router();
 // Public routes
 router.get("/", getAllTokens);
 router.get("/supported", getAllTokens);
+router.get("/distribution", getDistribution);
 router.get("/:type", getToken);
 router.post("/convert", validateBody(schemas.convertToUSD), convertToUSD);
 

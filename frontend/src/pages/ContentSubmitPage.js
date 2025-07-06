@@ -1,276 +1,511 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import useWallet from "../hooks/useWallet";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { submitContent } from "../utils/api";
-import { parseErrorMessage } from "../utils/helpers";
+import useWallet from "../hooks/useWallet";
 
 const ContentSubmitPage = () => {
-  const navigate = useNavigate();
-  const { isConnected } = useWallet();
-
+  const { address, isConnected } = useWallet();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    contentUrl: "",
-    contentType: "article",
-    votingDuration: 3, // Default 3 days
-    file: null, // New: for file upload
-    tags: "", // New: for tags input
+    category: "",
+    tags: "",
+    file: null
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const categories = [
+    { label: "News & Articles", value: "article" },
+    { label: "Research Papers", value: "article" }, 
+    { label: "Images & Photos", value: "image" },
+    { label: "Videos", value: "video" },
+    { label: "Documents", value: "other" },
+    { label: "Social Media Posts", value: "other" },
+    { label: "Other", value: "other" }
+  ];
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (file) => {
+    setFormData(prev => ({
+      ...prev,
+      file: file
+    }));
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!isConnected) {
-      setError("Please connect your wallet first");
+      setSubmitStatus({ type: 'error', message: 'Please connect your wallet first' });
       return;
     }
 
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
     try {
-      setLoading(true);
-      setError(null);
-
-      // Create a FormData object to handle the file upload
-      const formDataToSend = new FormData();
-
-      // Add text fields to FormData
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("contentType", formData.contentType);
-      formDataToSend.append("tags", formData.tags); // Add tags
-
-      // Convert voting duration from days to seconds (minimum 24 hours = 86400 seconds)
-      const votingDurationSeconds = parseInt(formData.votingDuration) * 86400;
-      formDataToSend.append("votingDuration", votingDurationSeconds);
-
-      // Append the actual file
+      const submitData = new FormData();
+      submitData.append('title', formData.title);
+      submitData.append('description', formData.description);
+      submitData.append('contentType', formData.category);
+      submitData.append('tags', formData.tags);
+      submitData.append('votingDuration', '604800'); // 7 days in seconds (7 * 24 * 60 * 60)
+      
       if (formData.file) {
-        formDataToSend.append("file", formData.file, formData.file.name);
-      } else {
-        // Fallback if no file is selected, use contentUrl as a text file
-        const contentUrlBlob = new Blob([formData.contentUrl], {
-          type: "text/plain",
-        });
-        formDataToSend.append("file", contentUrlBlob, "content-url.txt");
+        submitData.append('file', formData.file);
       }
 
-      console.log("Submitting content with FormData:", {
+      console.log('Submitting content with data:', {
         title: formData.title,
         description: formData.description,
-        contentType: formData.contentType,
-        votingDuration: votingDurationSeconds,
+        contentType: formData.category,
+        tags: formData.tags,
+        votingDuration: '604800',
+        hasFile: !!formData.file
       });
 
-      // Submit content to API with FormData
-      const response = await submitContent(formDataToSend);
-      console.log("Content submission response:", response);
-
-      // Redirect to the content page
-      navigate(`/content/${response.contentId}`);
-    } catch (err) {
-      console.error("Error submitting content:", err);
-      setError(parseErrorMessage(err));
+      const response = await submitContent(submitData);
+      
+      // Create IPFS URL if available
+      const ipfsUrl = response.ipfsHash 
+        ? `https://amaranth-genetic-bear-101.mypinata.cloud/ipfs/${response.ipfsHash}`
+        : null;
+      
+      setSubmitStatus({ 
+        type: 'success', 
+        message: 'Content submitted successfully! It will be available for voting soon.',
+        data: response,
+        ipfsUrl: ipfsUrl
+      });
+      
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        category: "",
+        tags: "",
+        file: null
+      });
+      
+    } catch (error) {
+      console.error('Submit error:', error);
+      console.error('Error response:', error.response?.data);
+      setSubmitStatus({ 
+        type: 'error', 
+        message: error.response?.data?.message || error.message || 'Failed to submit content. Please try again.'
+      });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Redirect to home if not connected
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   if (!isConnected) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Connect Wallet Required
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Please connect your wallet to submit content for verification.
-        </p>
-        <button onClick={() => navigate("/")} className="btn-primary">
-          Return to Home
-        </button>
+      <div className="w-full max-w-4xl mx-auto px-6 py-16">
+        <div className="glass p-12 text-center">
+          <div className="mb-6">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--accent-blue)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mx-auto mb-4"
+            >
+              <path d="M9 12l2 2 4-4"></path>
+              <path d="M21 12c.552 0 1-.448 1-1V5c0-.552-.448-1-1-1H3c-.552 0-1 .448-1 1v6c0 .552.448 1 1 1h9l4 4 4-4z"></path>
+            </svg>
+          </div>
+          <h2 
+            className="text-2xl font-light mb-4"
+            style={{ color: 'var(--text-main)', fontWeight: '300' }}
+          >
+            Wallet Connection Required
+          </h2>
+          <p 
+            className="text-lg font-light mb-8"
+            style={{ color: 'var(--text-sub)', fontWeight: '300' }}
+          >
+            Please connect your wallet to submit content for verification
+          </p>
+          <button 
+            className="btn-primary"
+            onClick={() => {
+              document.querySelector('.wallet-connect-button')?.click();
+            }}
+          >
+            Connect Wallet
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">
-        Submit Content for Verification
-      </h1>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-100 text-red-700 p-4 rounded-md mb-6"
+    <div className="w-full max-w-4xl mx-auto px-6 py-8">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 
+          className="text-4xl font-light mb-4"
+          style={{ 
+            color: 'var(--text-main)', 
+            fontWeight: '300',
+            letterSpacing: '-0.02em'
+          }}
         >
-          {error}
-        </motion.div>
-      )}
+          Submit Content for Verification
+        </h1>
+        <p 
+          className="text-lg font-light max-w-2xl mx-auto"
+          style={{ color: 'var(--text-sub)', fontWeight: '300' }}
+        >
+          Upload your content to the decentralized verification system. The community will vote on its authenticity.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-1"
+      {/* Status Messages */}
+      <AnimatePresence>
+        {submitStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`glass p-6 mb-8 border-l-4 ${
+              submitStatus.type === 'success' 
+                ? 'border-green-400' 
+                : 'border-red-400'
+            }`}
           >
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            className="input-field"
-            placeholder="Enter content title"
-          />
+            <div>
+              <div className="flex items-center mb-3">
+                <div className="mr-3">
+                  {submitStatus.type === 'success' ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#10b981' }}>
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#ef4444' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                  )}
+                </div>
+                <p style={{ color: 'var(--text-main)', margin: 0 }}>
+                  {submitStatus.message}
+                </p>
+              </div>
+              
+              {submitStatus.type === 'success' && submitStatus.data && (
+                <div className="mt-4 space-y-2">
+                  {submitStatus.data.contentId && (
+                    <p style={{ color: 'var(--text-sub)', fontSize: '0.9rem', margin: 0 }}>
+                      <strong>Content ID:</strong> {submitStatus.data.contentId}
+                    </p>
+                  )}
+                  {submitStatus.ipfsUrl && (
+                    <p style={{ color: 'var(--text-sub)', fontSize: '0.9rem', margin: 0 }}>
+                      <strong>IPFS URL:</strong> 
+                      <a 
+                        href={submitStatus.ipfsUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: 'var(--accent-blue)', marginLeft: '0.5rem', textDecoration: 'underline' }}
+                      >
+                        View on IPFS
+                      </a>
+                    </p>
+                  )}
+                  <div className="flex gap-3 mt-4">
+                    <Link to="/dashboard">
+                      <button className="btn-secondary text-sm">
+                        View Dashboard
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Form */}
+      <div className="glass p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Title */}
+          <div>
+            <label 
+              className="block text-sm font-medium mb-3"
+              style={{ color: 'var(--text-main)' }}
+            >
+              Content Title *
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              required
+              className="input-field"
+              placeholder="Enter a descriptive title for your content"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label 
+              className="block text-sm font-medium mb-3"
+              style={{ color: 'var(--text-main)' }}
+            >
+              Description *
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              required
+              rows={4}
+              className="input-field resize-none"
+              placeholder="Provide a detailed description of the content and why it needs verification"
+            />
+          </div>
+
+          {/* Category and Tags Row */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label 
+                className="block text-sm font-medium mb-3"
+                style={{ color: 'var(--text-main)' }}
+              >
+                Category *
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                required
+                className="input-field"
+              >
+                <option value="">Select a category</option>
+                {categories.map(category => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label 
+                className="block text-sm font-medium mb-3"
+                style={{ color: 'var(--text-main)' }}
+              >
+                Tags
+              </label>
+              <input
+                type="text"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                className="input-field"
+                placeholder="e.g., news, politics, technology (comma-separated)"
+              />
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <label 
+              className="block text-sm font-medium mb-3"
+              style={{ color: 'var(--text-main)' }}
+            >
+              Upload File (Optional)
+            </label>
+            <div
+              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive 
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              style={{ 
+                borderColor: dragActive ? 'var(--accent-blue)' : 'var(--divider)',
+                background: dragActive ? 'rgba(91, 226, 255, 0.1)' : 'transparent'
+              }}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                onChange={(e) => handleFileChange(e.target.files[0])}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+              />
+              
+              {formData.file ? (
+                <div className="space-y-2">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"></path>
+                  </svg>
+                  <p style={{ color: 'var(--text-main)', fontWeight: '500' }}>
+                    {formData.file.name}
+                  </p>
+                  <p style={{ color: 'var(--text-sub)', fontSize: '0.875rem' }}>
+                    {formatFileSize(formData.file.size)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleFileChange(null)}
+                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                  >
+                    Remove file
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7,10 12,15 17,10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <p style={{ color: 'var(--text-main)', fontWeight: '500' }}>
+                    Drop your file here, or click to browse
+                  </p>
+                  <p style={{ color: 'var(--text-sub)', fontSize: '0.875rem' }}>
+                    Supports images, videos, documents (max 10MB)
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end pt-6">
+            <motion.button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary flex items-center space-x-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17,8 12,3 7,8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span>Submit for Verification</span>
+                </>
+              )}
+            </motion.button>
+          </div>
+        </form>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid md:grid-cols-2 gap-6 mt-12">
+        <div className="glass p-6">
+          <h3 
+            className="text-lg font-medium mb-3"
+            style={{ color: 'var(--text-main)', fontWeight: '400' }}
+          >
+            How It Works
+          </h3>
+          <ul className="space-y-2" style={{ color: 'var(--text-sub)' }}>
+            <li className="flex items-start">
+              <span className="text-blue-400 mr-2">1.</span>
+              Submit your content with detailed information
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-400 mr-2">2.</span>
+              Community members stake tokens to vote
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-400 mr-2">3.</span>
+              Two-phase voting ensures fair consensus
+            </li>
+            <li className="flex items-start">
+              <span className="text-blue-400 mr-2">4.</span>
+              Results are recorded on blockchain
+            </li>
+          </ul>
         </div>
 
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700 mb-1"
+        <div className="glass p-6">
+          <h3 
+            className="text-lg font-medium mb-3"
+            style={{ color: 'var(--text-main)', fontWeight: '400' }}
           >
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows={4}
-            className="input-field"
-            placeholder="Describe the content you're submitting"
-          />
+            Submission Guidelines
+          </h3>
+          <ul className="space-y-2" style={{ color: 'var(--text-sub)' }}>
+            <li className="flex items-start">
+              <span className="text-green-400 mr-2">-</span>
+              Provide clear, descriptive titles
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-400 mr-2">-</span>
+              Include relevant context and sources
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-400 mr-2">-</span>
+              Choose appropriate categories
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-400 mr-2">-</span>
+              Respect copyright and privacy laws
+            </li>
+          </ul>
         </div>
-
-        <div>
-          <label
-            htmlFor="file"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Content File
-          </label>
-          <input
-            type="file"
-            id="file"
-            name="file"
-            onChange={handleChange}
-            required
-            className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Upload the actual content file (image, video, document, etc.)
-          </p>
-        </div>
-
-        <div>
-          <label
-            htmlFor="tags"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Tags (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="tags"
-            name="tags"
-            value={formData.tags}
-            onChange={handleChange}
-            className="input-field"
-            placeholder="e.g., blockchain, AI, news"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Add relevant keywords to categorize your content
-          </p>
-        </div>
-
-        <div>
-          <label
-            htmlFor="contentType"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Content Type
-          </label>
-          <select
-            id="contentType"
-            name="contentType"
-            value={formData.contentType}
-            onChange={handleChange}
-            className="input-field"
-          >
-            <option value="article">Article</option>
-            <option value="image">Image</option>
-            <option value="video">Video</option>
-            <option value="audio">Audio</option>
-            <option value="document">Document</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="votingDuration"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Voting Duration (days)
-          </label>
-          <select
-            id="votingDuration"
-            name="votingDuration"
-            value={formData.votingDuration}
-            onChange={handleChange}
-            className="input-field"
-          >
-            <option value="1">1 day</option>
-            <option value="3">3 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-            <option value="30">30 days</option>
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            The duration for which voting will be open
-          </p>
-        </div>
-
-        <div className="flex justify-end space-x-4 pt-4">
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </motion.button>
-
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={loading}
-            className="btn-primary"
-          >
-            {loading ? "Submitting..." : "Submit Content"}
-          </motion.button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };

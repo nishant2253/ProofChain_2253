@@ -29,9 +29,19 @@ export const getContract = (signerOrProvider) => {
 };
 
 export const generateCommitHash = (vote, confidence, salt, address, tokenType) => {
+  // Ensure salt is a proper bytes32 value
+  let saltBytes32;
+  if (typeof salt === 'string' && salt.startsWith('0x') && salt.length === 66) {
+    // Already a 32-byte hex string
+    saltBytes32 = salt;
+  } else {
+    // Hash the salt to get a proper bytes32 value
+    saltBytes32 = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(salt.toString()));
+  }
+  
   const encoded = ethers.utils.defaultAbiCoder.encode(
     ["uint8", "uint256", "bytes32", "address", "uint8"],
-    [vote, confidence, salt, address, tokenType]
+    [vote, confidence, saltBytes32, address, tokenType]
   );
   return ethers.utils.keccak256(encoded);
 };

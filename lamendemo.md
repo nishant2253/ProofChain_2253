@@ -258,25 +258,67 @@ Now, all components should be running, and your MetaMask should be configured to
    - The backend creates a database entry linking to the blockchain record
    - The content enters the commit phase of voting
 
-### Step 5: Participate in Commit Phase Voting
+### Step 5: Revolutionary Two-Step Voting Process
 
-1. Find a content item in the commit phase
-2. Click on the content to view its details
-3. Click "Vote" to open the voting interface
-4. Select your vote option:
-   - Real: You believe the content is authentic
-   - Fake: You believe the content is fabricated
-   - AI-Generated: You believe the content was created by AI
-5. Set your confidence level (1-100%)
-6. Select the token type you want to stake (ETH, DAI, LINK, etc.)
-7. Enter the stake amount (the minimum depends on the token)
-8. Click "Commit Vote"
-9. Approve the transaction in your wallet
-10. Behind the scenes:
-    - A cryptographic hash is generated from your vote, confidence, and a random salt
-    - This hash is submitted to the blockchain, hiding your actual vote
-    - Your tokens are staked and locked until the reveal phase ends
-    - The backend stores your commit information securely
+**NEW: Complete Commit-Reveal Voting Implementation**
+
+#### **Phase 1: Commit Your Vote**
+
+1. **Browse Content in Dashboard**:
+   - Navigate to the main dashboard to see all available content
+   - Each content card shows title, description, voting status, and time remaining
+   - Look for content showing "Start Voting (Commit)" button
+
+2. **Expand Content Details** (NEW):
+   - **Click the chevron (▼) button** to expand any content card
+   - **View comprehensive information**:
+     - Content ID, type, submission date
+     - IPFS hash and direct links to view full content
+     - Submitter wallet address
+     - **Live content preview** (images, videos, articles displayed directly)
+
+3. **Initiate Voting Process**:
+   - Click **"Start Voting (Commit)"** button on content in commit phase
+   - Enhanced modal voting interface opens
+
+4. **Fill Out Voting Form**:
+   - **Vote Options**:
+     - **Accept** (green): Content is authentic
+     - **Reject** (red): Content is fake/inauthentic  
+     - **Abstain** (gray): Insufficient information
+   - **Confidence Level**: 1-10 scale slider
+   - **Token Type**: ETH currently supported (others coming soon)
+   - **Stake Amount**: Minimum 0.01 ETH (this will be staked from your wallet)
+
+5. **Commit Vote - Step 1**:
+   - Click **"Commit Vote"** button (blue)
+   - **MetaMask opens**: "Please confirm the COMMIT transaction in MetaMask..."
+   - **Review transaction**: Check stake amount and gas fees
+   - **Approve transaction**: Your tokens are staked and vote hash is committed
+   - **Success**: Button shows "✓ Commit Complete" and you see transaction hash
+
+#### **Phase 2: Submit Your Vote**
+
+6. **Submit Vote - Step 2**:
+   - Click **"Submit Vote"** button (purple, now enabled)
+   - **MetaMask opens again**: "Please confirm the SUBMIT transaction in MetaMask..."
+   - **Review reveal transaction**: Check gas fees for reveal
+   - **Approve transaction**: Your actual vote is revealed on blockchain
+   - **Success**: Button shows "✓ Submit Complete" - voting process complete!
+
+#### **Enhanced User Experience**
+
+7. **Smart Progress Tracking**:
+   - **Content cards show progress**: "Start Voting (Commit)" → "Complete Vote (Submit)" → "✓ Voting Complete"
+   - **Modal shows both buttons**: Commit and Submit with clear states
+   - **Error prevention**: Cannot skip steps or repeat completed actions
+   - **Process guidance**: Built-in instructions explain each step
+
+8. **Behind the Scenes**:
+   - **Step 1**: Cryptographic hash generated and committed to blockchain with token stake
+   - **Step 2**: Original vote revealed using stored salt, completing the commit-reveal scheme
+   - **Security**: Vote privacy maintained until reveal phase
+   - **Automatic salt management**: System handles cryptographic salt generation and storage
 
 ### Step 6: Participate in Reveal Phase Voting
 
@@ -328,14 +370,33 @@ Now, all components should be running, and your MetaMask should be configured to
 2. Click to toggle between light and dark modes
 3. Your preference will be saved for future visits
 
-### View Consensus Dashboard
+### View Enhanced Content Dashboard
 
-1. Navigate to the Dashboard section
-2. View visualizations of:
-   - Consensus timeline showing voting patterns
-   - Token distribution across different token types
-   - Content status breakdown
-   - Key metrics including total votes and consensus rate
+The ProofChain dashboard has been completely redesigned to focus on content management and detailed information:
+
+1. **Navigate to the Dashboard section**
+2. **Browse Content Items**:
+   - View all submitted content in organized card layout
+   - See voting status and time remaining for each item
+   - Auto-refresh every 30 seconds or manual refresh
+
+3. **Expand Content Details** (NEW FEATURE):
+   - **Click the chevron (▼) button** on any content card to expand
+   - **Left Column**: Detailed metadata
+     - Content ID and type
+     - Submission timestamp
+     - IPFS hash (truncated and full)
+     - Submitter wallet address
+   - **Right Column**: Live content preview
+     - Images, videos, articles displayed directly
+     - Direct IPFS links to full content
+     - Error handling for failed loads
+
+4. **Enhanced Voting Experience**:
+   - **MetaMask Integration**: Direct blockchain voting
+   - **Real-time Feedback**: Transaction status updates
+   - **Vote Options**: Accept, Reject, Abstain with descriptions
+   - **Token Support**: ETH currently supported, others coming soon
 
 This comprehensive guide covers the entire user journey from setting up the application to participating in the full voting cycle and checking results.
 
@@ -347,3 +408,125 @@ To clear all existing data from the MongoDB database (useful for development and
     cd backend/
     node scripts/flushDb.js
 ```
+
+
+## Enhanced UI/UX Features (Latest Updates)
+
+### Modern Design System
+
+The ProofChain application now features a beautiful, modern interface with:
+
+**Glassmorphism Design**
+- Backdrop blur effects and transparency
+- Dark/light theme support with smooth transitions
+- CSS custom properties for consistent theming
+- Inter font for modern typography
+
+**Enhanced User Experience**
+- Auto-refreshing dashboard (updates every 30 seconds)
+- Real-time voting phase indicators
+- Rich content preview (images, videos, documents)
+- Drag-and-drop file upload with visual feedback
+
+### Enhanced Content Submission Workflow
+
+**Step-by-Step Process:**
+
+1. **Connect Wallet**: Use MetaMask or compatible wallet
+2. **Navigate to Submit Content**: Click "Submit Content" in navigation
+3. **Fill Form**:
+   - Enter descriptive title
+   - Provide detailed description
+   - Select appropriate category (Images & Photos, Videos, Articles, etc.)
+   - Add relevant tags (comma-separated)
+   - Upload file (optional) via drag-and-drop or click to browse
+4. **Submit**: Click "Submit for Verification"
+5. **Success Confirmation**: 
+   - See IPFS URL for your uploaded content
+   - Get Content ID for tracking
+   - Click "View Dashboard" to see your content
+
+### Revolutionary Dashboard Features (Latest Update)
+
+**Content-Focused Interface:**
+- **Completely redesigned** from analytics charts to content management
+- **Expandable content cards** with maximize/minimize functionality
+- **Two-column detailed view** when expanded (metadata + preview)
+- **Real-time status indicators** for voting phases
+
+**Advanced IPFS Integration:**
+- **Live content previews** directly in dashboard (images, videos, articles)
+- **IPFS hash display** (truncated with full hash access)
+- **Direct IPFS links** to `https://amaranth-genetic-bear-101.mypinata.cloud/ipfs/{hash}`
+- **Error handling** with graceful fallbacks for failed content loads
+
+**Enhanced MetaMask Voting:**
+- **Direct blockchain integration** with comprehensive transaction feedback
+- **Real-time status updates**: MetaMask prompts → Transaction submission → Confirmation
+- **Automatic salt generation** and display for reveal phase
+- **Enhanced error handling** for all transaction scenarios
+
+**Smart Content Management:**
+- **Auto-refresh every 30 seconds** with manual refresh option
+- **Detailed content metadata**: ID, type, submission date, submitter address
+- **Voting phase indicators** with time remaining countdown
+- **Responsive design** with dark mode support
+
+**Professional User Experience:**
+- **Smooth animations** using Framer Motion for expand/collapse
+- **Modal-based voting** with comprehensive form validation
+- **Loading states** and progress indicators throughout
+- **Mobile-optimized** interface with touch-friendly controls
+
+### Navigation and Layout Improvements
+
+**Modern Header:**
+- Glassmorphism design with backdrop blur
+- Logo with gradient background
+- Theme toggle (dark/light mode)
+- Wallet connection status
+- Responsive mobile menu
+
+**Protected Routes:**
+- Automatic wallet connection check
+- Redirect to home if not connected
+- Seamless navigation between pages
+
+### Technical Enhancements
+
+**Performance Optimizations:**
+- Lazy loading for heavy components
+- Optimized re-renders
+- Image and video loading optimization
+- Efficient state management
+
+**Error Handling:**
+- User-friendly error messages
+- Fallback displays for failed content loads
+- Proper validation and feedback
+
+**Accessibility:**
+- ARIA labels and keyboard navigation
+- Screen reader support
+- Touch-friendly interface elements
+
+### Complete Enhanced User Journey
+
+**For Content Submitters:**
+1. Connect wallet → Submit content → Get IPFS URL → View in dashboard
+2. Monitor voting progress in real-time
+3. See community feedback and consensus results
+
+**For Voters:**
+1. Connect wallet → Browse dashboard → Preview actual content
+2. Vote during commit phase → Reveal during reveal phase
+3. Track voting history and reputation
+
+**Key Improvements:**
+- **Visual Content Verification**: See actual images/videos before voting
+- **Real-time Updates**: Dashboard automatically refreshes with new content
+- **Professional Interface**: Modern glassmorphism design with smooth animations
+- **Enhanced Workflow**: Seamless flow from submission to voting to results
+
+The enhanced interface provides a seamless, professional experience that makes decentralized content verification accessible and intuitive for all users.
+

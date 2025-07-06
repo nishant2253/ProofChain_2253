@@ -5,6 +5,7 @@ const {
   updateTokenPrices,
   convertTokenToUSD,
   initializeDefaultTokens,
+  getTokenDistribution,
 } = require("../services/tokenService");
 
 /**
@@ -98,10 +99,25 @@ const initializeTokens = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @desc    Get token distribution statistics
+ * @route   GET /api/tokens/distribution
+ * @access  Public
+ */
+const getDistribution = asyncHandler(async (req, res) => {
+  const distribution = await getTokenDistribution();
+
+  res.json({
+    success: true,
+    data: distribution,
+  });
+});
+
 module.exports = {
   getAllTokens,
   getToken,
   updatePrices,
   convertToUSD,
   initializeTokens,
+  getDistribution,
 };

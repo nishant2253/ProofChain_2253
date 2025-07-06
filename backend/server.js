@@ -51,6 +51,7 @@ app.use("/api", apiLimiter);
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/content", require("./routes/contentRoutes"));
 app.use("/api/tokens", require("./routes/tokenRoutes"));
+app.use("/api/consensus", require("./routes/consensusRoutes"));
 
 // Default route
 app.get("/", (req, res) => {

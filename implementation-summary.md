@@ -4,6 +4,213 @@
 
 ProofChain is a decentralized application implementing a multi-token voting system with a commit-reveal scheme for content verification. The system uses mathematical protections against various attacks and integrates with blockchain technology for transparency and immutability.
 
+## Recent Updates and Fixes
+
+### ConsensusDashboard Enhancement (Latest)
+- **Completely redesigned ConsensusDashboard** from analytics charts to content-focused interface
+- **Added expandable content sections** with maximize/minimize functionality using smooth animations
+- **Implemented detailed IPFS integration** showing:
+  - IPFS hash (truncated and full)
+  - Direct IPFS URLs to `https://amaranth-genetic-bear-101.mypinata.cloud/ipfs/{hash}`
+  - Content previews for images, videos, and articles
+  - Error handling for failed content loads
+- **Enhanced content details display**:
+  - Content ID, type, submission date
+  - Submitter wallet address
+  - Two-column layout when expanded (details + preview)
+- **Revolutionary Two-Step Voting Process**:
+  - **Separate "Commit Vote" and "Submit Vote" buttons** with sequential workflow
+  - **Step 1 - Commit**: Stakes tokens and commits vote hash to blockchain
+  - **Step 2 - Submit**: Reveals vote and completes the voting process
+  - **Smart button states**: Shows progress and prevents duplicate actions
+  - **Error prevention**: Comprehensive validation at each step
+- **Enhanced MetaMask Integration**:
+  - **Two separate blockchain transactions** for commit-reveal scheme
+  - **Real-time transaction feedback** with detailed status messages
+  - **Automatic authentication** with fallback user registration
+  - **MongoDB ObjectId to numeric contentId conversion** for smart contract compatibility
+- **Fixed Critical Issues**:
+  - **BigNumber errors**: Proper ID conversion for blockchain operations
+  - **Authentication errors**: Automatic user registration and token management
+  - **Validation errors**: Fixed backend schemas for commit/reveal operations
+  - **ethers.js compatibility**: Using proper v5 syntax throughout
+
+### Backend API Fixes
+- **Fixed token service validation** to prevent NaN errors in database queries
+- **Added proper error handling** for invalid token types in `getTokenByType` function
+- **Created missing API endpoints**:
+  - `GET /api/tokens/distribution` - Token distribution statistics
+  - `GET /api/consensus/stats` - Consensus dashboard statistics
+  - `GET /api/consensus/timeline` - Voting timeline data
+- **Enhanced error messages** for better debugging and user feedback
+- **Added input validation** for tokenType parameters to prevent database cast errors
+- **Fixed voting endpoints**:
+  - **Enhanced `/api/content/:id/commit`** with proper salt handling and user authentication
+  - **Fixed `/api/content/:id/reveal`** with transactionHash validation and MongoDB ID conversion
+  - **Added automatic user registration** for seamless wallet-based authentication
+- **Resolved BigNumber compatibility**:
+  - **MongoDB ObjectId conversion** to numeric contentId for smart contract operations
+  - **Consistent ID handling** across commit and reveal operations
+  - **Proper error handling** for blockchain integration
+
+### Frontend MetaMask Integration
+- **Enhanced MetaMask integration** for commit voting in VotingInterface and ConsensusDashboard
+- **Added proper transaction status feedback** with loading states and confirmation messages
+- **Improved user experience** with detailed error handling for blockchain transactions
+- **Fixed blockchain integration issues** with proper ethers.js v5 usage and syntax
+
+## Major Feature Enhancements Summary
+
+### Complete Dashboard Transformation
+The ConsensusDashboard has undergone a revolutionary redesign that transforms it from a simple analytics interface into a comprehensive content management and voting platform:
+
+#### From Analytics to Content Management
+- **Previous**: Basic charts showing consensus statistics and token distribution
+- **Current**: Full-featured content browser with expandable cards and detailed metadata
+- **Impact**: Users can now see, interact with, and vote on actual content rather than just viewing statistics
+
+#### Advanced IPFS Content Integration
+- **IPFS Hash Management**: Display truncated hashes with full hash access and direct gateway links
+- **Live Content Previews**: Images, videos, and articles render directly in the dashboard
+- **Content Type Support**: Comprehensive handling for different media types with error fallbacks
+- **Gateway Integration**: Direct links to `https://amaranth-genetic-bear-101.mypinata.cloud/ipfs/{hash}`
+
+#### Enhanced User Interaction Model
+- **Expandable Interface**: Click-to-expand content cards with smooth animations
+- **Two-Column Layout**: Metadata on left, live preview on right when expanded
+- **Real-time Updates**: Auto-refresh every 30 seconds with manual refresh capability
+- **Status Indicators**: Clear visual indicators for voting phases and time remaining
+
+### Blockchain Integration Improvements
+#### MetaMask Transaction Flow Enhancement
+- **Transaction Prompting**: Clear "Please confirm transaction in MetaMask..." messages
+- **Status Tracking**: Real-time updates from submission to confirmation
+- **Error Handling**: Comprehensive error messages for all transaction scenarios
+- **Success Feedback**: Transaction hash display and salt preservation for reveal phase
+
+#### Smart Contract Integration Fixes
+- **ethers.js Compatibility**: Fixed v5 syntax usage (`ethers.utils.parseUnits`)
+- **Proper Hook Management**: Added `useCallback` for optimal React performance
+- **Transaction Validation**: Enhanced input validation and error prevention
+- **Gas Optimization**: Efficient transaction preparation and execution
+
+### Backend API Robustness
+#### Missing Endpoint Resolution
+- **Token Distribution API**: `GET /api/tokens/distribution` for dashboard statistics
+- **Consensus Stats API**: `GET /api/consensus/stats` for voting metrics
+- **Timeline Data API**: `GET /api/consensus/timeline` for historical data
+- **Error Prevention**: Fixed NaN validation errors in token service
+
+#### Enhanced Error Handling
+- **Input Validation**: Comprehensive validation for tokenType parameters
+- **Database Protection**: Prevention of invalid data causing cast errors
+- **User-Friendly Messages**: Clear error messages for debugging and user feedback
+- **Graceful Degradation**: Fallbacks for service failures
+
+### User Experience Revolution
+#### Professional Interface Design
+- **Modern Aesthetics**: Clean, card-based layout with glassmorphism effects
+- **Dark Mode Support**: Comprehensive theming with smooth transitions
+- **Responsive Design**: Mobile-optimized interface with touch-friendly controls
+- **Animation System**: Framer Motion animations for smooth interactions
+
+#### Content Discovery Enhancement
+- **Visual Content Verification**: Users can see actual content before voting
+- **Detailed Metadata Display**: Complete content information including submitter details
+- **IPFS Integration**: Seamless access to decentralized content storage
+- **Real-time Status**: Live updates on voting phases and participation
+
+#### Voting Process Improvement
+- **Modal-Based Interface**: Clean, focused voting experience
+- **Enhanced Options**: Accept/Reject/Abstain with clear descriptions
+- **Confidence Scaling**: 1-10 confidence level with visual slider
+- **Token Support**: ETH integration with multi-token framework for future expansion
+
+### Technical Architecture Enhancements
+#### Frontend Performance
+- **Optimized Re-rendering**: Efficient state management and component updates
+- **Lazy Loading**: Performance optimization for heavy content
+- **Error Boundaries**: Graceful handling of component failures
+- **Memory Management**: Proper cleanup and resource management
+
+#### Backend Scalability
+- **Service Layer Enhancement**: Improved separation of concerns
+- **Caching Strategy**: Redis integration with fallback mechanisms
+- **Database Optimization**: Proper indexing and query optimization
+- **API Consistency**: Standardized response formats and error handling
+
+### Development Experience Improvements
+#### Code Quality
+- **TypeScript Readiness**: Improved type safety and documentation
+- **ESLint Compliance**: Consistent code style and best practices
+- **Component Architecture**: Reusable, maintainable component structure
+- **Testing Framework**: Foundation for comprehensive testing
+
+#### Documentation Enhancement
+- **Implementation Summary**: Comprehensive documentation of all changes
+- **User Guide Updates**: Step-by-step instructions for new features
+- **API Documentation**: Clear endpoint descriptions and usage examples
+- **Setup Instructions**: Detailed environment configuration guides
+
+### Revolutionary Two-Step Voting Implementation
+
+#### Complete Workflow Redesign
+The voting system has been completely redesigned to implement a proper commit-reveal scheme with two distinct phases:
+
+**Phase 1 - Commit Vote:**
+- **User Interface**: Dedicated "Commit Vote" button (blue)
+- **Blockchain Action**: Calls `commitMultiTokenVote` smart contract function
+- **Token Staking**: Stakes ETH tokens as part of the commitment
+- **Cryptographic Security**: Generates and stores salt for reveal phase
+- **State Management**: Button shows "✓ Commit Complete" when done
+- **Error Prevention**: Prevents duplicate commits with validation
+
+**Phase 2 - Submit Vote:**
+- **User Interface**: Dedicated "Submit Vote" button (purple, enabled after commit)
+- **Blockchain Action**: Calls `revealMultiTokenVote` smart contract function
+- **Vote Revelation**: Reveals the actual vote using stored salt
+- **Final Validation**: Completes the voting process on blockchain
+- **State Management**: Button shows "✓ Submit Complete" when done
+- **Error Prevention**: Prevents submission without prior commit
+
+#### Technical Implementation Details
+
+**Frontend Architecture:**
+- **State Persistence**: `userVoteHistory` Map tracks progress per content item
+- **Salt Management**: Automatic generation and secure storage between phases
+- **ID Conversion**: MongoDB ObjectId to numeric contentId for smart contract compatibility
+- **Transaction Handling**: Separate MetaMask prompts for each phase
+- **Error Handling**: Phase-specific error messages and validation
+
+**Backend Integration:**
+- **Dual Endpoints**: `/api/content/:id/commit` and `/api/content/:id/reveal`
+- **Authentication**: Automatic user registration with wallet-based auth
+- **Validation Schemas**: Separate validation for commit and reveal data
+- **ID Processing**: Consistent MongoDB to numeric ID conversion
+- **Error Recovery**: Comprehensive error handling and logging
+
+**Smart Contract Integration:**
+- **Commit Phase**: `commitMultiTokenVote(contentId, commitHash, tokenType, stakeAmount, merkleProof)`
+- **Reveal Phase**: `revealMultiTokenVote(contentId, vote, confidence, saltBytes32)`
+- **Security**: Proper salt handling and bytes32 conversion
+- **Gas Optimization**: Efficient transaction preparation
+
+#### User Experience Enhancements
+
+**Visual Feedback System:**
+- **Button States**: Clear visual progression through voting phases
+- **Status Messages**: Real-time feedback for each transaction step
+- **Progress Indicators**: Loading animations and confirmation messages
+- **Error Display**: User-friendly error messages with actionable guidance
+
+**Workflow Guidance:**
+- **Process Instructions**: Built-in guide explaining the two-step process
+- **State Indicators**: Clear indication of current phase and next steps
+- **Completion Status**: Visual confirmation when both phases are complete
+- **Content Card Updates**: Dynamic button text based on voting progress
+
+This comprehensive enhancement represents a significant evolution of the ProofChain platform, transforming it from a basic voting application into a professional-grade decentralized content verification system with enterprise-level user experience, robust blockchain integration, and a secure commit-reveal voting mechanism that prevents manipulation and ensures vote privacy.
+
 ## Phase 1: Backend Foundation
 
 ### Architecture Setup
@@ -1533,3 +1740,218 @@ The fixes delivered the following benefits:
 - **Problem:** The need to bypass authentication during development to streamline testing, which is a security vulnerability if used in production.
 - **Solution:** Implemented a temporary `BYPASS_AUTH=true` flag in `backend/.env` and modified the `protect` middleware in `backend/middleware/authMiddleware.js` to conditionally bypass authentication only in `development` mode.
 - **Risk Mitigation:** Explicitly stated that this bypass is for development only and must be disabled/removed for production deployments.
+
+
+## Phase 3: Modern UI/UX Implementation & Design System
+
+### Complete Design System Overhaul
+
+**Modern Glassmorphism Theme System**
+- Implemented comprehensive CSS custom properties for dark/light theme support
+- Added Inter font integration via Google Fonts with proper CSP configuration
+- Created glassmorphism design with backdrop blur effects and transparency
+- Implemented smooth theme transitions and animations throughout the application
+
+**CSS Custom Properties Implementation**
+```css
+:root {
+  /* Dark theme variables */
+  --bg-gradient-dark: linear-gradient(135deg, #18143c 0%, #1a2a5e 50%, #232459 100%);
+  --text-main-dark: #eaf6ff;
+  --accent-blue-dark: #5be2ff;
+  --accent-cyan-dark: #8ff8ff;
+  --accent-purple-dark: #b388fc;
+  --card-bg-dark: rgba(24, 26, 50, 0.93);
+  --btn-grad-dark: linear-gradient(90deg, #5be2ff 5%, #b388fc 95%);
+  
+  /* Light theme variables */
+  --bg-main-light: #ffffff;
+  --text-heading-light: #1a202c;
+  --accent-blue-light: #0066ff;
+  --card-bg-light: #ffffff;
+}
+```
+
+### Enhanced Component Architecture
+
+**Updated Theme Context Provider**
+- Modified to use data-theme attributes instead of CSS classes
+- Default dark theme implementation matching design specifications
+- Proper localStorage persistence for theme preferences
+- Seamless theme switching with CSS custom property updates
+
+**Modern Component Design**
+- All components updated to use CSS custom properties
+- Consistent glassmorphism styling across the application
+- Smooth animations and micro-interactions using Framer Motion
+- Responsive design patterns for mobile and desktop
+
+### Homepage Redesign
+
+**Hero Section Implementation**
+- Large typography with gradient text effects
+- 3D blockchain visualization using SVG animations
+- Dynamic theme-aware blockchain cubes with gradient fills
+- Responsive layout with proper mobile adaptation
+
+**Blockchain Visualization Component**
+- Created custom SVG-based 3D blockchain representation
+- Theme-aware color schemes and gradients
+- Animated elements with proper fallbacks
+- Glassmorphism container with backdrop blur effects
+
+**Features Section**
+- Modern card-based layout with hover animations
+- SVG icons instead of emoji characters for better compatibility
+- Consistent spacing and typography hierarchy
+- Call-to-action sections with wallet integration
+
+### Content Submission Page Redesign
+
+**Modern Form Interface**
+- Beautiful glassmorphism form design with proper field styling
+- Drag-and-drop file upload with visual feedback
+- Real-time form validation and error handling
+- Category mapping to backend-compatible values
+
+**Enhanced User Experience**
+- File preview with size formatting
+- Progress indicators during submission
+- Success messages with IPFS URL and Content ID display
+- Direct navigation to dashboard after successful submission
+
+**Form Features**
+- Drag-and-drop file upload zone with hover states
+- Category selection with proper backend mapping
+- Tag input with comma-separated values
+- File type validation and size limits
+- Loading states with animated spinners
+
+### Consensus Dashboard Complete Redesign
+
+**Real-time Content Management**
+- Auto-refresh functionality every 30 seconds
+- Manual refresh button with loading animations
+- Real-time voting phase calculations (Commit → Reveal → Ended)
+- Time remaining countdown for each phase
+
+**Rich Content Preview System**
+- Image preview with proper error handling
+- Video player integration with controls
+- Article/document iframe preview
+- Fallback displays for unsupported content types
+- Direct IPFS links for full content access
+
+**Advanced Voting Interface**
+- Modal-based voting system with glassmorphism design
+- Vote options with color-coded descriptions (Accept/Reject/Abstain)
+- Confidence level slider (1-10 scale)
+- Token type selection (ETH, USDC, DAI)
+- Stake amount input with validation
+
+**Dashboard Features**
+- Content cards with voting phase indicators
+- Time remaining displays with dynamic updates
+- Content type and tag information
+- IPFS hash display with direct links
+- Responsive grid layout for content items
+
+### Layout and Navigation Improvements
+
+**Modern Header Design**
+- Glassmorphism header with backdrop blur
+- Logo with gradient background effects
+- Clean navigation with hover states
+- Theme toggle integration
+- Wallet connection status display
+
+**Enhanced Navigation**
+- Responsive mobile menu with animations
+- Protected routes based on wallet connection
+- Smooth transitions between pages
+- Breadcrumb-style navigation indicators
+
+### Technical Improvements
+
+**Component Import Resolution**
+- Fixed circular dependency issues in App.js
+- Proper component lazy loading implementation
+- Error boundary implementation for better error handling
+- Systematic component testing and validation
+
+**API Integration Enhancements**
+- Enhanced error handling with user-friendly messages
+- Proper FormData handling for file uploads
+- IPFS URL construction and validation
+- Real-time content fetching and updates
+
+**Performance Optimizations**
+- Lazy loading for heavy components
+- Optimized re-renders with proper dependency arrays
+- Efficient state management for real-time updates
+- Image and video loading optimization with error fallbacks
+
+### Content Security Policy (CSP) Configuration
+
+**Font Loading Optimization**
+- Updated CSP headers to allow Google Fonts
+- Proper preconnect links for performance
+- Fallback font stacks for reliability
+- Cross-origin resource sharing configuration
+
+### Responsive Design Implementation
+
+**Mobile-First Approach**
+- Breakpoint-based responsive design
+- Touch-friendly interface elements
+- Optimized layouts for various screen sizes
+- Proper viewport configuration
+
+**Cross-Device Compatibility**
+- Consistent experience across devices
+- Adaptive component sizing
+- Mobile-optimized navigation
+- Touch gesture support
+
+### Animation and Interaction Design
+
+**Framer Motion Integration**
+- Smooth page transitions and component animations
+- Hover effects and micro-interactions
+- Loading state animations
+- Modal and overlay animations
+
+**User Feedback Systems**
+- Visual feedback for all user actions
+- Loading states for async operations
+- Success and error message displays
+- Progress indicators for multi-step processes
+
+### File Upload and IPFS Integration
+
+**Enhanced File Handling**
+- Drag-and-drop interface with visual feedback
+- File type validation and size limits
+- Preview generation for uploaded files
+- Error handling for failed uploads
+
+**IPFS Content Display**
+- Direct content preview in dashboard
+- Proper content type detection
+- Fallback handling for unsupported formats
+- Performance optimization for large files
+
+### Results of UI/UX Phase
+
+The ProofChain application now features a modern, professional interface that provides:
+
+- **Seamless User Experience**: Intuitive navigation and clear visual hierarchy
+- **Real-time Updates**: Auto-refreshing dashboard with live content updates
+- **Rich Content Preview**: Direct visualization of submitted content for verification
+- **Responsive Design**: Consistent experience across all devices and screen sizes
+- **Accessibility**: Proper ARIA labels, keyboard navigation, and screen reader support
+- **Performance**: Optimized loading times and smooth animations
+- **Professional Aesthetics**: Modern glassmorphism design with consistent branding
+
+The implementation successfully transforms the application from a functional prototype into a production-ready platform with enterprise-level UI/UX standards.
+

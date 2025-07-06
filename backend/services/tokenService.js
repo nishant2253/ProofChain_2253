@@ -46,15 +46,25 @@ const getSupportedTokens = async (activeOnly = false) => {
  */
 const getTokenByType = async (tokenType) => {
   try {
+    // Validate tokenType
+    if (tokenType === undefined || tokenType === null || isNaN(tokenType)) {
+      throw new Error(`Invalid tokenType: ${tokenType}`);
+    }
+
+    const numericTokenType = parseInt(tokenType);
+    if (isNaN(numericTokenType)) {
+      throw new Error(`TokenType must be a valid number: ${tokenType}`);
+    }
+
     // Check cache first
-    const cacheKey = `token:${tokenType}:data`;
+    const cacheKey = `token:${numericTokenType}:data`;
     const cachedToken = await getCache(cacheKey);
     if (cachedToken) {
       return cachedToken;
     }
 
     // Get token from database
-    const token = await SupportedToken.findOne({ tokenType });
+    const token = await SupportedToken.findOne({ tokenType: numericTokenType });
 
     if (!token) {
       return null;
@@ -72,6 +82,43 @@ const getTokenByType = async (tokenType) => {
     return formattedToken;
   } catch (error) {
     console.error(`Error getting token by type ${tokenType}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get token distribution statistics
+ * @returns {Promise<Object>} - Token distribution data
+ */
+const getTokenDistribution = async () => {
+  try {
+    // Check cache first
+    const cacheKey = "tokens:distribution";
+    const cachedDistribution = await getCache(cacheKey);
+    if (cachedDistribution) {
+      return cachedDistribution;
+    }
+
+    // Get all active tokens
+    const tokens = await getSupportedTokens(true);
+    
+    // Mock distribution data for now - in production this would come from actual voting data
+    const distribution = tokens.map(token => ({
+      tokenType: token.tokenType,
+      symbol: token.symbol,
+      name: token.name,
+      totalStaked: Math.floor(Math.random() * 1000000), // Mock data
+      totalVotes: Math.floor(Math.random() * 1000),
+      averageStake: Math.floor(Math.random() * 1000),
+      percentage: Math.floor(Math.random() * 100)
+    }));
+
+    // Cache distribution
+    await setCache(cacheKey, distribution, 300); // Cache for 5 minutes
+
+    return distribution;
+  } catch (error) {
+    console.error("Error getting token distribution:", error);
     throw error;
   }
 };
@@ -238,4 +285,5 @@ module.exports = {
   updateTokenPrices,
   convertTokenToUSD,
   initializeDefaultTokens,
+  getTokenDistribution,
 };
