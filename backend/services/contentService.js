@@ -30,15 +30,18 @@ const { MIN_VOTING_PERIOD } = require("../utils/constants");
  */
 const createContent = async (contentData, fileBuffer, fileName, signer) => {
   try {
-    // Upload file to IPFS
-    const fileHash = await uploadToIPFS(fileBuffer, fileName);
+    let fileHash = null;
+    // Upload file to IPFS only if a file is provided
+    if (fileBuffer && fileName) {
+      fileHash = await uploadToIPFS(fileBuffer, fileName);
+    }
 
     // Create metadata
     const metadata = {
       title: contentData.title,
       description: contentData.description || "",
-      contentType: contentData.contentType || "image",
-      fileHash,
+      contentType: contentData.contentType || "text",
+      fileHash, // This can be null if no file is uploaded
       creator: signer.address.toLowerCase(),
       timestamp: Date.now(),
       tags: contentData.tags || [],
@@ -47,8 +50,12 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
     // Upload metadata to IPFS
     const metadataHash = await uploadMetadataToIPFS(metadata);
 
-    // Pin both hashes to ensure persistence
-    await Promise.all([pinToIPFS(fileHash), pinToIPFS(metadataHash)]);
+    // Pin hashes to ensure persistence
+    const pinPromises = [pinToIPFS(metadataHash)];
+    if (fileHash) {
+      pinPromises.push(pinToIPFS(fileHash));
+    }
+    await Promise.all(pinPromises);
 
     // Calculate voting duration in seconds
     const votingDuration = contentData.votingDuration || MIN_VOTING_PERIOD;
@@ -67,8 +74,6 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       title: metadata.title,
       description: metadata.description,
       contentType: metadata.contentType,
-      contentUrl: `ipfs://${fileHash}`,
-      thumbnailUrl: `ipfs://${fileHash}`,
       creator: signer.address.toLowerCase(),
       tags: metadata.tags,
       submissionTime: new Date(),
@@ -77,6 +82,11 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       isActive: true,
       transactionHash,
     });
+
+    if (fileHash) {
+      content.contentUrl = `ipfs://${fileHash}`;
+      content.thumbnailUrl = `ipfs://${fileHash}`; // Or generate a separate thumbnail
+    }
 
     await content.save();
 

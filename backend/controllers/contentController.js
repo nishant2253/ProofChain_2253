@@ -16,7 +16,8 @@ const { ethers } = require("ethers");
  * @access  Private
  */
 const createNewContent = asyncHandler(async (req, res) => {
-  const { title, description, contentType, votingDuration, tags } = req.body;
+  const { title, description, votingDuration, tags } = req.body;
+  let { contentType } = req.body;
 
   if (!title) {
     res.status(400);
@@ -24,14 +25,16 @@ const createNewContent = asyncHandler(async (req, res) => {
   }
 
   // File is optional - check if it exists
-  let file = null;
   let fileBuffer = null;
   let fileName = null;
-  
+
   if (req.files && req.files.file) {
-    file = req.files.file;
+    const file = req.files.file;
     fileBuffer = file.data;
     fileName = file.name;
+  } else {
+    // If no file is provided, default to "text" content type
+    contentType = contentType || "text";
   }
 
   // File handling is now done above

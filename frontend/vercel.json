@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "name": "proofchain-frontend",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "@react_app_api_url",
+    "REACT_APP_BLOCKCHAIN_RPC_URL": "@react_app_blockchain_rpc_url",
+    "REACT_APP_CONTRACT_ADDRESS": "@react_app_contract_address",
+    "REACT_APP_IPFS_GATEWAY": "@react_app_ipfs_gateway",
+    "REACT_APP_PINATA_API_KEY": "@react_app_pinata_api_key",
+    "REACT_APP_PINATA_SECRET_KEY": "@react_app_pinata_secret_key",
+    "REACT_APP_ENVIRONMENT": "@react_app_environment"
+  },
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "@react_app_api_url",
+      "REACT_APP_BLOCKCHAIN_RPC_URL": "@react_app_blockchain_rpc_url",
+      "REACT_APP_CONTRACT_ADDRESS": "@react_app_contract_address",
+      "REACT_APP_IPFS_GATEWAY": "@react_app_ipfs_gateway",
+      "REACT_APP_PINATA_API_KEY": "@react_app_pinata_api_key",
+      "REACT_APP_PINATA_SECRET_KEY": "@react_app_pinata_secret_key",
+      "REACT_APP_ENVIRONMENT": "@react_app_environment"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

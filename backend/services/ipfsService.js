@@ -32,6 +32,11 @@ const generateMockIpfsHash = () => {
  * @returns {Promise<String>} - IPFS hash
  */
 const uploadToIPFS = async (fileBuffer, fileName) => {
+  // If no file buffer or file name is provided, return null
+  if (!fileBuffer || !fileName) {
+    console.log("No file buffer or file name provided, skipping IPFS upload.");
+    return null;
+  }
   try {
     // Use mock implementation in development mode
     if (USE_MOCK_IPFS) {

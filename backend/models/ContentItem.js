@@ -76,16 +76,14 @@ const contentItemSchema = new mongoose.Schema(
     },
     contentType: {
       type: String,
-      enum: ["image", "video", "article", "audio", "other"],
-      default: "image",
+      enum: ["image", "video", "article", "audio", "text", "other"],
+      default: "text",
     },
     contentUrl: {
       type: String,
-      default: "",
     },
     thumbnailUrl: {
       type: String,
-      default: "",
     },
     creator: {
       type: String,
