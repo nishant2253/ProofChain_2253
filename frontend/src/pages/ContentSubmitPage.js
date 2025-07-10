@@ -11,8 +11,27 @@ const ContentSubmitPage = () => {
     description: "",
     category: "",
     tags: "",
-    file: null
+    file: null,
+    votingStartDate: "",
+    votingStartTime: "",
+    votingEndDate: "",
+    votingEndTime: ""
   });
+
+  // Helper function to set default voting period (24 hours from now)
+  const setDefaultVotingPeriod = () => {
+    const now = new Date();
+    const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+    const endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000); // 24 hours after start
+    
+    setFormData(prev => ({
+      ...prev,
+      votingStartDate: startTime.toISOString().split('T')[0],
+      votingStartTime: startTime.toTimeString().slice(0, 5),
+      votingEndDate: endTime.toISOString().split('T')[0],
+      votingEndTime: endTime.toTimeString().slice(0, 5)
+    }));
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [dragActive, setDragActive] = useState(false);
@@ -69,6 +88,57 @@ const ContentSubmitPage = () => {
       return;
     }
 
+    // Validate voting period
+    if (!formData.votingStartDate || !formData.votingStartTime || !formData.votingEndDate || !formData.votingEndTime) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please set both voting start and end date/time"
+      });
+      return;
+    }
+
+    const votingStart = new Date(`${formData.votingStartDate}T${formData.votingStartTime}`);
+    const votingEnd = new Date(`${formData.votingEndDate}T${formData.votingEndTime}`);
+    const now = new Date();
+
+    if (votingStart <= now) {
+      setSubmitStatus({
+        type: "error",
+        message: "Voting start time must be in the future"
+      });
+      return;
+    }
+
+    if (votingEnd <= votingStart) {
+      setSubmitStatus({
+        type: "error",
+        message: "Voting end time must be after start time"
+      });
+      return;
+    }
+
+    // Check minimum voting duration (1 hour)
+    const durationMs = votingEnd - votingStart;
+    const durationHours = durationMs / (1000 * 60 * 60);
+    const minDurationHours = 1;
+    const maxDurationDays = 7;
+    
+    if (durationHours < minDurationHours) {
+      setSubmitStatus({
+        type: "error",
+        message: `Voting period must be at least ${minDurationHours} hour(s). Current duration: ${durationHours.toFixed(1)} hours.`
+      });
+      return;
+    }
+    
+    if (durationHours > (maxDurationDays * 24)) {
+      setSubmitStatus({
+        type: "error",
+        message: `Voting period must be at most ${maxDurationDays} days. Current duration: ${(durationHours / 24).toFixed(1)} days.`
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus(null);
 
@@ -78,7 +148,8 @@ const ContentSubmitPage = () => {
       submitData.append('description', formData.description);
       submitData.append('contentType', formData.category);
       submitData.append('tags', formData.tags);
-      submitData.append('votingDuration', '604800'); // 7 days in seconds (7 * 24 * 60 * 60)
+      submitData.append('votingStartTime', votingStart.getTime());
+      submitData.append('votingEndTime', votingEnd.getTime());
       
       if (formData.file) {
         submitData.append('file', formData.file);
@@ -89,7 +160,8 @@ const ContentSubmitPage = () => {
         description: formData.description,
         contentType: formData.category,
         tags: formData.tags,
-        votingDuration: '604800',
+        votingStartTime: votingStart.getTime(),
+        votingEndTime: votingEnd.getTime(),
         hasFile: !!formData.file
       });
 
@@ -102,7 +174,7 @@ const ContentSubmitPage = () => {
       
       setSubmitStatus({ 
         type: 'success', 
-        message: 'Content submitted successfully! It will be available for voting soon.',
+        message: 'Content submitted successfully! Voting will be available during the specified period.',
         data: response,
         ipfsUrl: ipfsUrl
       });
@@ -113,7 +185,11 @@ const ContentSubmitPage = () => {
         description: "",
         category: "",
         tags: "",
-        file: null
+        file: null,
+        votingStartDate: "",
+        votingStartTime: "",
+        votingEndDate: "",
+        votingEndTime: ""
       });
       
     } catch (error) {
@@ -352,6 +428,131 @@ const ContentSubmitPage = () => {
                 placeholder="e.g., news, politics, technology (comma-separated)"
               />
             </div>
+          </div>
+
+          {/* Voting Period Section */}
+          <div className="space-y-6">
+            <div>
+              <h3 
+                className="text-lg font-semibold mb-4"
+                style={{ color: 'var(--text-main)' }}
+              >
+                Voting Period *
+              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <p 
+                  className="text-sm"
+                  style={{ color: 'var(--text-sub)' }}
+                >
+                  Set the start and end time for when users can vote on this content
+                </p>
+                <button
+                  type="button"
+                  onClick={setDefaultVotingPeriod}
+                  className="text-sm px-3 py-1 rounded border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white transition-colors"
+                >
+                  Set Default (24h)
+                </button>
+              </div>
+            </div>
+
+            {/* Voting Start Time */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-3"
+                  style={{ color: 'var(--text-main)' }}
+                >
+                  Voting Start Date *
+                </label>
+                <input
+                  type="date"
+                  name="votingStartDate"
+                  value={formData.votingStartDate}
+                  onChange={handleInputChange}
+                  required
+                  className="input-field"
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-3"
+                  style={{ color: 'var(--text-main)' }}
+                >
+                  Voting Start Time *
+                </label>
+                <input
+                  type="time"
+                  name="votingStartTime"
+                  value={formData.votingStartTime}
+                  onChange={handleInputChange}
+                  required
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            {/* Voting End Time */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-3"
+                  style={{ color: 'var(--text-main)' }}
+                >
+                  Voting End Date *
+                </label>
+                <input
+                  type="date"
+                  name="votingEndDate"
+                  value={formData.votingEndDate}
+                  onChange={handleInputChange}
+                  required
+                  className="input-field"
+                  min={formData.votingStartDate || new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-3"
+                  style={{ color: 'var(--text-main)' }}
+                >
+                  Voting End Time *
+                </label>
+                <input
+                  type="time"
+                  name="votingEndTime"
+                  value={formData.votingEndTime}
+                  onChange={handleInputChange}
+                  required
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            {/* Voting Period Preview */}
+            {formData.votingStartDate && formData.votingStartTime && formData.votingEndDate && formData.votingEndTime && (
+              <div className="glass p-4 border-l-4 border-blue-400">
+                <h4 className="font-medium mb-2" style={{ color: 'var(--text-main)' }}>
+                  Voting Period Preview
+                </h4>
+                <div className="space-y-1 text-sm" style={{ color: 'var(--text-sub)' }}>
+                  <p>
+                    <strong>Start:</strong> {new Date(`${formData.votingStartDate}T${formData.votingStartTime}`).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>End:</strong> {new Date(`${formData.votingEndDate}T${formData.votingEndTime}`).toLocaleString()}
+                  </p>
+                  <p>
+                    <strong>Duration:</strong> {
+                      Math.round((new Date(`${formData.votingEndDate}T${formData.votingEndTime}`) - new Date(`${formData.votingStartDate}T${formData.votingStartTime}`)) / (1000 * 60 * 60 * 24))
+                    } days
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* File Upload */}

@@ -1,17 +1,24 @@
-const { ContentItem, CommitInfo } = require("../models");
+const { ContentItem } = require("../models");
 const { VOTE_OPTIONS } = require("../utils/constants");
+const { uploadVotingResultsToIPFS } = require("./ipfsService");
 
 /**
- * Finalize voting for content that has passed its deadline
+ * Finalize voting for content that has passed its deadline (Simple Voting System)
  */
 const finalizeExpiredContent = async () => {
   try {
     const now = new Date();
     
-    // Find content that needs finalization
+    // Find content that needs finalization (updated for simple voting system)
     const expiredContent = await ContentItem.find({
       isFinalized: false,
-      commitDeadline: { $lt: now }
+      isActive: true,
+      $or: [
+        // New simple voting system
+        { votingEndTime: { $lt: now } },
+        // Legacy commit-reveal system (for backward compatibility)
+        { commitDeadline: { $lt: now } }
+      ]
     });
 
     console.log(`Found ${expiredContent.length} content items ready for finalization`);
@@ -28,77 +35,130 @@ const finalizeExpiredContent = async () => {
 };
 
 /**
- * Finalize voting for a specific content item
+ * Finalize voting for a specific content item (Simple Voting System)
  */
 const finalizeContentVoting = async (content) => {
   try {
-    console.log(`Finalizing voting for content ${content.contentId}`);
+    console.log(`Finalizing voting for content ${content.contentId} (${content.title})`);
 
-    // Get all votes for this content
-    const votes = await CommitInfo.find({ contentId: content.contentId });
+    // Get votes from the simple voting system (stored in content.votes array)
+    const votes = content.votes || [];
+    const upvotes = content.upvotes || 0;
+    const downvotes = content.downvotes || 0;
+    const totalVotes = votes.length;
     
-    if (votes.length === 0) {
+    if (totalVotes === 0) {
       console.log(`No votes found for content ${content.contentId}, marking as finalized with no result`);
+      
+      // Create voting results for IPFS
+      const votingResults = {
+        contentId: content.contentId,
+        title: content.title,
+        totalVotes: 0,
+        upvotes: 0,
+        downvotes: 0,
+        voteBreakdown: { upvotes: 0, downvotes: 0 },
+        votingStartTime: content.votingStartTime,
+        votingEndTime: content.votingEndTime,
+        participationRate: 0,
+        consensus: null,
+        blockchainResults: null
+      };
+
+      // Upload results to IPFS
+      try {
+        const resultsHash = await uploadVotingResultsToIPFS(votingResults);
+        content.resultsIPFSHash = resultsHash;
+        console.log(`Empty voting results uploaded to IPFS: ${resultsHash}`);
+      } catch (ipfsError) {
+        console.warn(`Failed to upload empty results to IPFS: ${ipfsError.message}`);
+      }
+
       content.isFinalized = true;
       content.winningOption = null;
+      content.consensus = null;
       await content.save();
-      return;
+      return votingResults;
     }
 
-    // Calculate vote distribution and determine winner
-    const voteDistribution = [0, 0, 0]; // [reject, accept, abstain]
-    let totalStakedUSD = 0;
-    const participants = new Set();
+    // Calculate vote distribution for simple voting system
+    const voteBreakdown = {
+      upvotes: upvotes,
+      downvotes: downvotes
+    };
 
-    for (const vote of votes) {
-      const voteOption = vote.vote;
-      const confidence = vote.confidence || 5;
-      const stakeAmount = parseFloat(vote.stakeAmount || '0');
-      const usdValue = parseFloat(vote.usdValueAtStake || '0');
-      
-      // Weight calculation: USD value * confidence factor
-      const weight = usdValue * (confidence / 10);
-      
-      if (voteOption >= 0 && voteOption <= 2) {
-        voteDistribution[voteOption] += weight;
-      }
-      
-      totalStakedUSD += usdValue;
-      participants.add(vote.voter);
-    }
-
-    // Determine winning option
-    const maxVotes = Math.max(...voteDistribution);
+    // Determine consensus (simple majority)
+    let consensus = null;
     let winningOption = null;
     
-    if (maxVotes > 0) {
-      winningOption = voteDistribution.indexOf(maxVotes);
+    if (upvotes > downvotes) {
+      consensus = "accept";
+      winningOption = 1; // Accept
+    } else if (downvotes > upvotes) {
+      consensus = "reject";
+      winningOption = 0; // Reject
+    } else {
+      consensus = "tie";
+      winningOption = null; // Tie
     }
 
-    // Update content with results
-    content.voteDistribution = voteDistribution.map(v => v.toString());
-    content.totalUSDValue = totalStakedUSD.toString();
-    content.participantCount = participants.size;
-    content.participants = Array.from(participants);
+    // Calculate participation rate (if we have expected participants data)
+    const participationRate = totalVotes; // Simple count for now
+
+    // Get unique participants
+    const participants = [...new Set(votes.map(vote => vote.voter))];
+    const participantCount = participants.length;
+
+    // Create comprehensive voting results
+    const votingResults = {
+      contentId: content.contentId,
+      title: content.title,
+      totalVotes: totalVotes,
+      upvotes: upvotes,
+      downvotes: downvotes,
+      voteBreakdown: voteBreakdown,
+      votingStartTime: content.votingStartTime,
+      votingEndTime: content.votingEndTime,
+      participationRate: participationRate,
+      consensus: consensus,
+      winningOption: winningOption,
+      participants: participants,
+      participantCount: participantCount,
+      blockchainResults: null, // Will be populated if blockchain integration is active
+      finalizedAt: new Date().toISOString()
+    };
+
+    // Upload voting results to IPFS
+    try {
+      const resultsHash = await uploadVotingResultsToIPFS(votingResults);
+      content.resultsIPFSHash = resultsHash;
+      console.log(`Voting results uploaded to IPFS: ${resultsHash}`);
+    } catch (ipfsError) {
+      console.warn(`Failed to upload voting results to IPFS: ${ipfsError.message}`);
+      // Continue with finalization even if IPFS upload fails
+    }
+
+    // Update content with finalization results
     content.winningOption = winningOption;
+    content.consensus = consensus;
+    content.participantCount = participantCount;
+    content.participants = participants;
     content.isFinalized = true;
+    content.finalizedAt = new Date();
 
     await content.save();
 
     console.log(`Content ${content.contentId} finalized:`, {
+      consensus,
       winningOption,
-      voteDistribution,
-      totalStakedUSD,
-      participantCount: participants.size
+      totalVotes,
+      upvotes,
+      downvotes,
+      participantCount,
+      resultsIPFSHash: content.resultsIPFSHash
     });
 
-    return {
-      contentId: content.contentId,
-      winningOption,
-      voteDistribution,
-      totalStakedUSD,
-      participantCount: participants.size
-    };
+    return votingResults;
 
   } catch (error) {
     console.error(`Error finalizing content ${content.contentId}:`, error);
@@ -107,7 +167,7 @@ const finalizeContentVoting = async (content) => {
 };
 
 /**
- * Get finalization status for content
+ * Get finalization status for content (Simple Voting System)
  */
 const getFinalizationStatus = async (contentId) => {
   try {
@@ -117,16 +177,33 @@ const getFinalizationStatus = async (contentId) => {
     }
 
     const now = new Date();
-    const commitDeadline = new Date(content.commitDeadline);
-    const votingEnded = now > commitDeadline;
-    const timeRemaining = Math.max(0, commitDeadline.getTime() - now.getTime());
+    
+    // Handle both new simple voting system and legacy commit-reveal
+    let votingEndTime, votingEnded, timeRemaining;
+    
+    if (content.votingEndTime) {
+      // New simple voting system
+      votingEndTime = new Date(content.votingEndTime);
+      votingEnded = now > votingEndTime;
+      timeRemaining = Math.max(0, votingEndTime.getTime() - now.getTime());
+    } else if (content.commitDeadline) {
+      // Legacy commit-reveal system
+      votingEndTime = new Date(content.commitDeadline);
+      votingEnded = now > votingEndTime;
+      timeRemaining = Math.max(0, votingEndTime.getTime() - now.getTime());
+    } else {
+      // Fallback
+      votingEnded = true;
+      timeRemaining = 0;
+    }
     
     console.log(`Finalization status for ${contentId}:`, {
       now: now.toISOString(),
-      commitDeadline: commitDeadline.toISOString(),
+      votingEndTime: votingEndTime?.toISOString(),
       votingEnded,
       timeRemaining,
-      isFinalized: content.isFinalized
+      isFinalized: content.isFinalized,
+      votingSystem: content.votingEndTime ? 'simple' : 'legacy'
     });
     
     return {
@@ -136,11 +213,16 @@ const getFinalizationStatus = async (contentId) => {
       canFinalize: votingEnded && !content.isFinalized,
       status: content.status,
       timeRemaining,
+      votingSystem: content.votingEndTime ? 'simple' : 'legacy',
       results: content.isFinalized ? {
         winningOption: content.winningOption,
-        voteDistribution: content.voteDistribution,
-        totalStakedUSD: content.totalUSDValue,
-        participantCount: content.participantCount
+        consensus: content.consensus,
+        totalVotes: content.votes ? content.votes.length : 0,
+        upvotes: content.upvotes || 0,
+        downvotes: content.downvotes || 0,
+        participantCount: content.participantCount || 0,
+        resultsIPFSHash: content.resultsIPFSHash || null,
+        finalizedAt: content.finalizedAt || null
       } : null
     };
   } catch (error) {

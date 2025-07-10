@@ -1,11 +1,12 @@
-const asyncHandler = require("express-async-handler");
+const ContentItem = require("../models/ContentItem");
 
 /**
  * @desc    Get consensus statistics
  * @route   GET /api/consensus/stats
  * @access  Public
  */
-const getConsensusStats = asyncHandler(async (req, res) => {
+const getConsensusStats = async (req, res) => {
+  try {
   // Mock data for now - in production this would come from actual voting data
   const stats = {
     totalVotes: Math.floor(Math.random() * 10000),
@@ -17,18 +18,26 @@ const getConsensusStats = asyncHandler(async (req, res) => {
     lastUpdated: new Date().toISOString()
   };
 
-  res.json({
-    success: true,
-    data: stats,
-  });
-});
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Error in getConsensusStats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get consensus stats"
+    });
+  }
+};
 
 /**
  * @desc    Get voting timeline data
  * @route   GET /api/consensus/timeline
  * @access  Public
  */
-const getVotingTimeline = asyncHandler(async (req, res) => {
+const getVotingTimeline = async (req, res) => {
+  try {
   // Mock timeline data for now
   const timeline = [];
   const now = new Date();
@@ -45,13 +54,135 @@ const getVotingTimeline = asyncHandler(async (req, res) => {
     });
   }
 
-  res.json({
-    success: true,
-    data: timeline.reverse(),
-  });
-});
+    res.json({
+      success: true,
+      data: timeline.reverse(),
+    });
+  } catch (error) {
+    console.error("Error in getVotingTimeline:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get voting timeline"
+    });
+  }
+};
+
+/**
+ * @desc    Submit a simple vote
+ * @route   POST /api/consensus/vote
+ * @access  Private
+ */
+const submitSimpleVote = async (req, res) => {
+  try {
+    const { contentId, vote, tokenType, stakeAmount, confidence } = req.body;
+    const userId = req.user?.id;
+    const userAddress = req.user?.address;
+
+    // Validate required fields
+    if (!contentId || vote === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: contentId, vote"
+      });
+    }
+
+    // Validate user authentication
+    if (!userAddress) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required"
+      });
+    }
+    // Find the content item
+    const content = await ContentItem.findOne({
+      $or: [
+        { contentId: contentId },
+        { _id: contentId }
+      ]
+    });
+
+    if (!content) {
+      return res.status(404).json({
+        success: false,
+        message: "Content not found"
+      });
+    }
+
+    // Check if voting is currently active
+    const now = new Date();
+    if (now < content.votingStartTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Voting has not started yet"
+      });
+    }
+
+    if (now > content.votingEndTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Voting period has ended"
+      });
+    }
+
+    // Check if user has already voted
+    const existingVote = content.votes?.find(v => 
+      v.voter.toLowerCase() === userAddress.toLowerCase()
+    );
+
+    if (existingVote) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already voted on this content"
+      });
+    }
+
+    // Add the vote to the content
+    const newVote = {
+      voter: userAddress.toLowerCase(),
+      vote: parseInt(vote),
+      tokenType: parseInt(tokenType),
+      stakeAmount: stakeAmount,
+      confidence: parseInt(confidence) || 5,
+      timestamp: new Date()
+    };
+
+    if (!content.votes) {
+      content.votes = [];
+    }
+    content.votes.push(newVote);
+
+    // Update vote counts
+    if (vote === 1) {
+      content.upvotes = (content.upvotes || 0) + 1;
+    } else {
+      content.downvotes = (content.downvotes || 0) + 1;
+    }
+
+    await content.save();
+
+    res.json({
+      success: true,
+      message: "Vote submitted successfully",
+      data: {
+        contentId: content.contentId || content._id,
+        vote: newVote.vote,
+        totalVotes: content.votes.length,
+        upvotes: content.upvotes || 0,
+        downvotes: content.downvotes || 0
+      }
+    });
+
+  } catch (error) {
+    console.error("Error submitting vote:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to submit vote"
+    });
+  }
+};
 
 module.exports = {
   getConsensusStats,
   getVotingTimeline,
+  submitSimpleVote,
 };

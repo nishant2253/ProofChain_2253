@@ -100,10 +100,6 @@ const ConsensusDashboard = () => {
   });
   const [isVoting, setIsVoting] = useState(false);
   const [voteStatus, setVoteStatus] = useState(null);
-  const [votingStep, setVotingStep] = useState('commit'); // 'commit' or 'submit'
-  const [commitCompleted, setCommitCompleted] = useState(false);
-  const [submitCompleted, setSubmitCompleted] = useState(false);
-  const [savedSalt, setSavedSalt] = useState(null);
   const [userVoteHistory, setUserVoteHistory] = useState(new Map()); // Track votes per content
 
   const voteOptions = [
@@ -169,33 +165,23 @@ const ConsensusDashboard = () => {
   const openVotingModal = (content) => {
     setSelectedContent(content);
     // Reset voting state when opening modal
-    const contentKey = content._id;
-    const userVotes = userVoteHistory.get(contentKey) || {};
-    
-    if (userVotes.commitCompleted && !userVotes.submitCompleted) {
-      setVotingStep('submit');
-      setCommitCompleted(true);
-      setVoteData(userVotes.voteData || voteData);
-    } else {
-      setVotingStep('commit');
-      setCommitCompleted(false);
-      setSubmitCompleted(false);
-    }
     setVoteStatus(null);
+    setIsVoting(false);
   };
 
   const getContentStatus = (content) => {
     if (content.status) {
       switch (content.status) {
-        case 'committing':
-          return { phase: 'commit', label: 'Commit Phase', color: '#3b82f6' };
-        case 'revealing':
-          return { phase: 'reveal', label: 'Reveal Phase', color: '#8b5cf6' };
+        case 'pending':
+          return { phase: 'pending', label: 'Voting Pending', color: '#f59e0b' };
+        case 'live':
+          return { phase: 'live', label: 'Voting Live', color: '#10b981' };
+        case 'expired':
+          return { phase: 'expired', label: 'Voting Expired', color: '#ef4444' };
         case 'finalized':
-        case 'ended':
-          return { phase: 'ended', label: 'Voting Ended', color: '#6b7280' };
+          return { phase: 'finalized', label: 'Results Finalized', color: '#3b82f6' };
         default:
-          return { phase: 'commit', label: 'Commit Phase', color: '#3b82f6' };
+          return { phase: 'pending', label: 'Voting Pending', color: '#f59e0b' };
       }
     }
 
@@ -228,16 +214,16 @@ const ConsensusDashboard = () => {
     }
 
     const now = Date.now();
-    const commitDeadline = new Date(content.commitDeadline).getTime();
-    const revealDeadline = new Date(content.revealDeadline).getTime();
+    const votingStartTime = new Date(content.votingStartTime).getTime();
+    const votingEndTime = new Date(content.votingEndTime).getTime();
 
     const status = getContentStatus(content);
     let targetTime;
 
-    if (status.phase === 'commit') {
-      targetTime = commitDeadline;
-    } else if (status.phase === 'reveal') {
-      targetTime = revealDeadline;
+    if (status.phase === 'pending') {
+      targetTime = votingStartTime;
+    } else if (status.phase === 'live') {
+      targetTime = votingEndTime;
     } else {
       return 'Ended';
     }
@@ -255,7 +241,7 @@ const ConsensusDashboard = () => {
     return `${hours}h ${minutes}m`;
   };
 
-  const handleCommitVote = async (e) => {
+  const handleVote = async (e) => {
     e.preventDefault();
     if (!selectedContent || !signer) return;
 
@@ -304,14 +290,14 @@ const ConsensusDashboard = () => {
       }
     }
 
-    // Check if user has already committed for this content
+    // Check if user has already voted for this content
     const contentKey = selectedContent._id;
     const userVotes = userVoteHistory.get(contentKey) || {};
     
-    if (userVotes.commitCompleted) {
+    if (userVotes.hasVoted) {
       setVoteStatus({
         type: 'error',
-        message: 'You have already committed your vote for this content. Please proceed to Submit Vote.'
+        message: 'You have already voted for this content.'
       });
       return;
     }
@@ -320,223 +306,44 @@ const ConsensusDashboard = () => {
     setVoteStatus(null);
 
     try {
-      const salt = generateRandomSalt();
-      const commitHash = generateCommitHash(
-        parseInt(voteData.vote),
-        parseInt(voteData.confidence),
-        salt,
-        address,
-        parseInt(voteData.tokenType)
-      );
+      setVoteStatus({ type: 'info', message: 'Submitting your vote...' });
 
-      const contract = getContract(signer);
-      // Use numeric contentId for smart contract, fallback to hash of MongoDB _id
-      let contentId;
-      if (selectedContent.contentId && !isNaN(selectedContent.contentId)) {
-        contentId = parseInt(selectedContent.contentId);
-      } else {
-        // Convert MongoDB ObjectId to numeric value using hash
-        const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(selectedContent._id));
-        contentId = ethers.BigNumber.from(hash).mod(ethers.BigNumber.from("999999999")).toNumber();
-      }
-      
-      console.log("Using contentId for commit smart contract:", contentId);
-      const tokenType = parseInt(voteData.tokenType);
-      const decimals = tokenType === 1 ? 18 : 18;
-      const stakeAmount = ethers.utils.parseUnits(voteData.stakeAmount, decimals);
-      const merkleProof = ["0x070e8db97b197cc0e4a1790c5e6c3667bab32d733db7f815fbe84f5824c7168d"];
-
-      setVoteStatus({ type: 'info', message: 'Please confirm the COMMIT transaction in MetaMask...' });
-
-      let tx;
-      if (tokenType === 1) {
-        tx = await contract.commitMultiTokenVote(
-          contentId, commitHash, tokenType, stakeAmount, merkleProof, { value: stakeAmount }
-        );
-      } else {
-        tx = await contract.commitMultiTokenVote(
-          contentId, commitHash, tokenType, stakeAmount, merkleProof
-        );
-      }
-
-      setVoteStatus({ type: 'info', message: 'Commit transaction submitted! Waiting for confirmation...' });
-      const receipt = await tx.wait();
-      
-      // Save commit data
-      const commitData = {
-        type: 'commit', vote: parseInt(voteData.vote), confidence: parseInt(voteData.confidence),
-        tokenType: parseInt(voteData.tokenType), stakeAmount: voteData.stakeAmount,
-        salt: salt, merkleProof: merkleProof, transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber
-      };
-
-      console.log("Submitting commit data to backend:", commitData);
-      console.log("Auth token exists:", !!localStorage.getItem("authToken"));
-      
-      await submitVote(selectedContent._id, commitData);
-      
-      // Update user vote history
-      const updatedVotes = { ...userVotes, commitCompleted: true, salt: salt, voteData: voteData };
-      const newHistory = new Map(userVoteHistory);
-      newHistory.set(contentKey, updatedVotes);
-      setUserVoteHistory(newHistory);
-      
-      setSavedSalt(salt);
-      setCommitCompleted(true);
-      setVotingStep('submit');
-      
-      setVoteStatus({
-        type: 'success',
-        message: `Commit successful! Transaction: ${receipt.transactionHash.substring(0, 10)}... Now click "Submit Vote" to complete the process.`
-      });
-
-    } catch (error) {
-      console.error('Commit vote error:', error);
-      let errorMessage = 'Failed to commit vote';
-      
-      if (error.code === 4001) {
-        errorMessage = 'Commit transaction rejected by user';
-      } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'Insufficient funds for commit transaction';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setVoteStatus({ type: 'error', message: errorMessage });
-    } finally {
-      setIsVoting(false);
-    }
-  };
-
-  const handleSubmitVote = async (e) => {
-    e.preventDefault();
-    if (!selectedContent || !signer) return;
-
-    // Check if user has completed commit step
-    const contentKey = selectedContent._id;
-    const userVotes = userVoteHistory.get(contentKey) || {};
-    
-    if (!userVotes.commitCompleted) {
-      setVoteStatus({
-        type: 'error',
-        message: 'You must complete the Commit Vote step first before submitting your vote.'
-      });
-      return;
-    }
-
-    if (userVotes.submitCompleted) {
-      setVoteStatus({
-        type: 'error',
-        message: 'You have already submitted your vote for this content. Both steps are complete.'
-      });
-      return;
-    }
-
-    setIsVoting(true);
-    setVoteStatus(null);
-
-    try {
-      const contract = getContract(signer);
-      // Use numeric contentId for smart contract, fallback to hash of MongoDB _id
-      let contentId;
-      if (selectedContent.contentId && !isNaN(selectedContent.contentId)) {
-        contentId = parseInt(selectedContent.contentId);
-      } else {
-        // Convert MongoDB ObjectId to numeric value using hash
-        const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(selectedContent._id));
-        contentId = ethers.BigNumber.from(hash).mod(ethers.BigNumber.from("999999999")).toNumber();
-      }
-      
-      console.log("Using contentId for submit smart contract:", contentId);
-
-      setVoteStatus({ type: 'info', message: 'Please confirm the SUBMIT transaction in MetaMask...' });
-
-      // Call reveal function on smart contract
-      // Convert salt to bytes32 properly - if it's a hex string, use it directly, otherwise hash it
-      const saltValue = userVotes.salt || savedSalt;
-      let saltBytes32;
-      
-      if (saltValue.startsWith('0x') && saltValue.length === 66) {
-        // Already a 32-byte hex string
-        saltBytes32 = saltValue;
-      } else {
-        // Hash the salt to get a proper bytes32 value
-        saltBytes32 = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(saltValue));
-      }
-      
-      console.log("Salt value:", saltValue);
-      console.log("Salt bytes32:", saltBytes32);
-      
-      const tx = await contract.revealMultiTokenVote(
-        contentId,
-        parseInt(voteData.vote),
-        parseInt(voteData.confidence),
-        saltBytes32
-      );
-
-      setVoteStatus({ type: 'info', message: 'Submit transaction submitted! Waiting for confirmation...' });
-      const receipt = await tx.wait();
-
-      // Submit reveal data to backend
-      const revealData = {
+      // Submit vote directly to backend API (simplified voting)
+      const voteSubmission = {
+        contentId: selectedContent.contentId || selectedContent._id,
         vote: parseInt(voteData.vote),
-        confidence: parseInt(voteData.confidence),
-        salt: userVotes.salt || savedSalt,
-        transactionHash: receipt.transactionHash
+        tokenType: parseInt(voteData.tokenType),
+        stakeAmount: voteData.stakeAmount,
+        confidence: parseInt(voteData.confidence)
       };
 
-      // Call the reveal endpoint directly
-      console.log("Submitting reveal data to backend:", revealData);
-      console.log("Auth token exists:", !!localStorage.getItem("authToken"));
-      
-      const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
-      const authToken = localStorage.getItem("authToken");
-      
-      const response = await fetch(`${apiUrl}/content/${selectedContent._id}/reveal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify(revealData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit reveal vote');
-      }
+      const response = await submitVote(voteSubmission);
+      console.log('Vote submission response:', response);
       
       // Update user vote history
-      const updatedVotes = { ...userVotes, submitCompleted: true };
+      const updatedVotes = { ...userVotes, hasVoted: true, voteData: voteData };
       const newHistory = new Map(userVoteHistory);
       newHistory.set(contentKey, updatedVotes);
       setUserVoteHistory(newHistory);
       
-      setSubmitCompleted(true);
-      
       setVoteStatus({
         type: 'success',
-        message: `Vote submitted successfully! Transaction: ${receipt.transactionHash.substring(0, 10)}... Your voting process is complete.`
+        message: 'Vote submitted successfully! Thank you for participating.'
       });
 
+      // Refresh content list and close modal after a short delay
       setTimeout(() => {
         setSelectedContent(null);
-        setVoteData({ vote: '', confidence: 5, tokenType: 1, stakeAmount: '0.01' });
-        setCommitCompleted(false);
-        setSubmitCompleted(false);
-        setVotingStep('commit');
-        setSavedSalt(null);
-        fetchContentList();
-      }, 3000);
+        setVoteStatus(null);
+        fetchContentList(); // Refresh to show updated vote counts
+      }, 2000);
 
     } catch (error) {
-      console.error('Submit vote error:', error);
+      console.error('Vote submission error:', error);
       let errorMessage = 'Failed to submit vote';
       
-      if (error.code === 4001) {
-        errorMessage = 'Submit transaction rejected by user';
-      } else if (error.message?.includes('insufficient funds')) {
-        errorMessage = 'Insufficient funds for submit transaction';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -546,6 +353,7 @@ const ConsensusDashboard = () => {
       setIsVoting(false);
     }
   };
+
 
   if (!isConnected) {
     return (
@@ -783,32 +591,58 @@ const ConsensusDashboard = () => {
                 </AnimatePresence>
 
                 {/* Voting Buttons */}
-                {(status.phase === 'commit' || status.phase === 'reveal') && (
-                  <div className="flex justify-end mt-4 gap-2">
-                    {(() => {
-                      const userVotes = userVoteHistory.get(content._id) || {};
-                      const commitDone = userVotes.commitCompleted;
-                      const submitDone = userVotes.submitCompleted;
-                      
-                      if (submitDone) {
-                        return (
-                          <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-                            ✓ Voting Complete
-                          </div>
-                        );
-                      }
-                      
+                <div className="flex justify-end mt-4 gap-2">
+                  {(() => {
+                    const userVotes = userVoteHistory.get(content._id) || {};
+                    const hasVoted = userVotes.hasVoted;
+                    
+                    if (hasVoted) {
+                      return (
+                        <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                          ✓ Vote Submitted
+                        </div>
+                      );
+                    }
+                    
+                    if (status.phase === 'live') {
                       return (
                         <button
                           onClick={() => openVotingModal(content)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
                         >
-                          {commitDone ? 'Complete Vote (Submit)' : 'Start Voting (Commit)'}
+                          Vote Now
                         </button>
                       );
-                    })()}
-                  </div>
-                )}
+                    } else if (status.phase === 'pending') {
+                      return (
+                        <button
+                          disabled
+                          className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm cursor-not-allowed"
+                        >
+                          Voting Not Started
+                        </button>
+                      );
+                    } else if (status.phase === 'expired') {
+                      return (
+                        <button
+                          disabled
+                          className="bg-red-400 text-white px-4 py-2 rounded-lg text-sm cursor-not-allowed"
+                        >
+                          Voting Expired
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <button
+                          disabled
+                          className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm cursor-not-allowed"
+                        >
+                          Voting Ended
+                        </button>
+                      );
+                    }
+                  })()}
+                </div>
               </motion.div>
             );
           })}
@@ -935,9 +769,8 @@ const ConsensusDashboard = () => {
                   />
                 </div>
 
-                {/* Two-Step Voting Buttons */}
+                {/* Simple Voting Buttons */}
                 <div className="space-y-3 pt-4">
-                  {/* Step 1: Commit Vote */}
                   <div className="flex gap-3">
                     <button
                       type="button"
@@ -948,69 +781,36 @@ const ConsensusDashboard = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={handleCommitVote}
-                      disabled={isVoting || !signer || (userVoteHistory.get(selectedContent._id)?.commitCompleted)}
+                      onClick={handleVote}
+                      disabled={isVoting || !signer || !voteData.vote || (userVoteHistory.get(selectedContent._id)?.hasVoted)}
                       className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                        userVoteHistory.get(selectedContent._id)?.commitCompleted
+                        userVoteHistory.get(selectedContent._id)?.hasVoted
                           ? 'bg-green-500 text-white cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white'
+                          : 'bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white'
                       }`}
                     >
-                      {isVoting && votingStep === 'commit' ? (
+                      {isVoting ? (
                         <span className="flex items-center justify-center">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Committing...
+                          Submitting Vote...
                         </span>
-                      ) : userVoteHistory.get(selectedContent._id)?.commitCompleted ? (
-                        '✓ Commit Complete'
+                      ) : userVoteHistory.get(selectedContent._id)?.hasVoted ? (
+                        '✓ Vote Submitted'
                       ) : !signer ? (
                         'Wallet Not Connected'
+                      ) : !voteData.vote ? (
+                        'Select Your Vote'
                       ) : (
-                        'Commit Vote'
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Step 2: Submit Vote */}
-                  <div className="flex gap-3">
-                    <div className="flex-1"></div> {/* Spacer */}
-                    <button
-                      type="button"
-                      onClick={handleSubmitVote}
-                      disabled={
-                        isVoting || 
-                        !signer || 
-                        !userVoteHistory.get(selectedContent._id)?.commitCompleted ||
-                        userVoteHistory.get(selectedContent._id)?.submitCompleted
-                      }
-                      className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                        userVoteHistory.get(selectedContent._id)?.submitCompleted
-                          ? 'bg-green-500 text-white cursor-not-allowed'
-                          : userVoteHistory.get(selectedContent._id)?.commitCompleted
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                          : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isVoting && votingStep === 'submit' ? (
-                        <span className="flex items-center justify-center">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Submitting...
-                        </span>
-                      ) : userVoteHistory.get(selectedContent._id)?.submitCompleted ? (
-                        '✓ Submit Complete'
-                      ) : userVoteHistory.get(selectedContent._id)?.commitCompleted ? (
                         'Submit Vote'
-                      ) : (
-                        'Submit Vote (Commit First)'
                       )}
                     </button>
                   </div>
 
                   {/* Voting Process Instructions */}
                   <div className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="font-medium mb-1">Two-Step Voting Process:</p>
-                    <p>1. <strong>Commit Vote</strong>: Stakes your tokens and commits your vote to blockchain</p>
-                    <p>2. <strong>Submit Vote</strong>: Reveals your vote and completes the voting process</p>
+                    <p className="font-medium mb-1">Simple Voting Process:</p>
+                    <p>Select your vote and click "Submit Vote" to participate in the consensus process.</p>
+                    <p>Your vote will be recorded immediately and cannot be changed.</p>
                     {!signer && (
                       <p className="text-red-500 mt-2">⚠️ Please ensure your wallet is connected</p>
                     )}

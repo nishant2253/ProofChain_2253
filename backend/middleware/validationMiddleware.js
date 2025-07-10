@@ -71,21 +71,44 @@ const schemas = {
     }).optional(),
   }),
 
-  // Content schemas
+  // Content schemas (Updated for Simple Voting System)
   createContent: Joi.object({
     title: Joi.string().required(),
-    description: Joi.string(),
+    description: Joi.string().allow('').optional(),
     contentType: Joi.string().valid(
-      "image",
+      "text",
+      "image", 
       "video",
       "article",
       "audio",
+      "document",
       "other"
-    ),
-    votingDuration: Joi.number().integer().min(86400), // Minimum 24 hours
-    tags: Joi.string(),
+    ).optional(),
+    // New simple voting system fields
+    votingStartTime: Joi.alternatives().try(
+      Joi.number().integer().min(Date.now() - 86400000), // Allow past dates for testing
+      Joi.string().isoDate()
+    ).optional(),
+    votingEndTime: Joi.alternatives().try(
+      Joi.number().integer().min(Date.now()),
+      Joi.string().isoDate()
+    ).optional(),
+    // Legacy field for backward compatibility
+    votingDuration: Joi.number().integer().min(3600).optional(), // Minimum 1 hour
+    tags: Joi.string().optional(),
+    category: Joi.string().optional(),
+    language: Joi.string().optional(),
   }),
 
+  // Simple voting schema (replaces commit-reveal)
+  submitVote: Joi.object({
+    vote: Joi.number().integer().min(0).max(1).required(), // 0 = downvote, 1 = upvote
+    confidence: Joi.number().integer().min(1).max(10).optional().default(5),
+    transactionHash: Joi.string().optional(),
+    blockNumber: Joi.number().integer().optional(),
+  }),
+
+  // Legacy commit-reveal schemas (kept for backward compatibility)
   commitVote: Joi.object({
     vote: Joi.number().integer().min(0).max(2).required(),
     confidence: Joi.number().integer().min(1).max(10).required(),

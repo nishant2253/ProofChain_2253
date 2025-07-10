@@ -16,7 +16,7 @@ const { ethers } = require("ethers");
  * @access  Private
  */
 const createNewContent = asyncHandler(async (req, res) => {
-  const { title, description, votingDuration, tags } = req.body;
+  const { title, description, votingStartTime, votingEndTime, tags } = req.body;
   let { contentType } = req.body;
 
   if (!title) {
@@ -60,7 +60,8 @@ const createNewContent = asyncHandler(async (req, res) => {
     title,
     description,
     contentType,
-    votingDuration: parseInt(votingDuration) || undefined,
+    votingStartTime: votingStartTime ? parseInt(votingStartTime) : undefined,
+    votingEndTime: votingEndTime ? parseInt(votingEndTime) : undefined,
     tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
   };
 

@@ -2,6 +2,11 @@ const axios = require("axios");
 const FormData = require("form-data");
 const { setCache, getCache } = require("../utils/redis");
 const crypto = require("crypto");
+const { 
+  formatMetadataForIPFS, 
+  isLegacyMetadata, 
+  migrateLegacyMetadata 
+} = require("../utils/ipfsMetadataValidator");
 
 // IPFS gateway URLs
 const IPFS_GATEWAY_URL =
@@ -12,7 +17,7 @@ const IPFS_API_URL =
 
 // Flag to use mock IPFS in development
 const USE_MOCK_IPFS =
-  !process.env.IPFS_PROJECT_ID || !process.env.IPFS_API_SECRET;
+  !process.env.IPFS_API_SECRET && !process.env.PINATA_JWT;
 
 // Mock IPFS storage for development
 const mockIpfsStorage = new Map();
@@ -54,10 +59,15 @@ const uploadToIPFS = async (fileBuffer, fileName) => {
     const formData = new FormData(); // <-- Re-added this line
     formData.append("file", fileBuffer, { filename: fileName });
 
+    // Use either PINATA_JWT or IPFS_API_SECRET for authorization
+    const authHeader = process.env.PINATA_JWT 
+      ? `Bearer ${process.env.PINATA_JWT}`
+      : `Bearer ${process.env.IPFS_API_SECRET}`;
+
     const response = await axios.post(`${IPFS_API_URL}/pinFileToIPFS`, formData, {
       headers: {
         ...formData.getHeaders(),
-        Authorization: `Bearer ${process.env.IPFS_API_SECRET}`,
+        Authorization: authHeader,
       },
     });
 
@@ -84,18 +94,57 @@ const uploadToIPFS = async (fileBuffer, fileName) => {
 };
 
 /**
- * Upload content metadata to IPFS
+ * Upload content metadata to IPFS for simple voting system
  * @param {Object} metadata - Content metadata
  * @returns {Promise<String>} - IPFS hash
  */
 const uploadMetadataToIPFS = async (metadata) => {
   try {
+    // Validate and format metadata for simple voting system
+    const formattedMetadata = {
+      // Core content information
+      title: metadata.title,
+      description: metadata.description || "",
+      contentType: metadata.contentType || "text",
+      fileHash: metadata.fileHash || null,
+      creator: metadata.creator,
+      timestamp: metadata.timestamp || Date.now(),
+      tags: metadata.tags || [],
+      
+      // Simple voting system fields (replacing commit-reveal)
+      votingStartTime: metadata.votingStartTime,
+      votingEndTime: metadata.votingEndTime,
+      votingDuration: metadata.votingEndTime && metadata.votingStartTime 
+        ? Math.floor((metadata.votingEndTime - metadata.votingStartTime) / 1000) 
+        : null,
+      
+      // Voting system metadata
+      votingSystem: "simple", // Identifier for the voting system type
+      version: "2.0", // Version to distinguish from old commit-reveal format
+      
+      // Optional additional metadata
+      category: metadata.category || "general",
+      language: metadata.language || "en",
+      
+      // IPFS and blockchain metadata
+      ipfsVersion: "1.0",
+      blockchainNetwork: process.env.BLOCKCHAIN_NETWORK || "localhost",
+      createdAt: new Date().toISOString(),
+    };
+
+    console.log("Uploading formatted metadata for simple voting:", {
+      title: formattedMetadata.title,
+      votingSystem: formattedMetadata.votingSystem,
+      version: formattedMetadata.version,
+      votingDuration: formattedMetadata.votingDuration
+    });
+
     // Use mock implementation in development mode
     if (USE_MOCK_IPFS) {
       console.log("Using mock IPFS implementation for metadata");
       const hash = generateMockIpfsHash();
       mockIpfsStorage.set(hash, {
-        content: JSON.stringify(metadata),
+        content: formattedMetadata, // Store the formatted metadata object
         fileName: "metadata.json",
         timestamp: Date.now(),
       });
@@ -104,18 +153,36 @@ const uploadMetadataToIPFS = async (metadata) => {
     }
 
     const formData = new FormData();
-    const metadataBuffer = Buffer.from(JSON.stringify(metadata));
+    const metadataBuffer = Buffer.from(JSON.stringify(formattedMetadata, null, 2));
     formData.append("file", metadataBuffer, { filename: "metadata.json" });
+
+    // Add Pinata metadata for better organization
+    const pinataMetadata = JSON.stringify({
+      name: `ProofChain-${formattedMetadata.title}-metadata`,
+      keyvalues: {
+        contentType: formattedMetadata.contentType,
+        votingSystem: formattedMetadata.votingSystem,
+        creator: formattedMetadata.creator,
+        version: formattedMetadata.version
+      }
+    });
+    formData.append("pinataMetadata", pinataMetadata);
+
+    // Use either PINATA_JWT or IPFS_API_SECRET for authorization
+    const authHeader = process.env.PINATA_JWT 
+      ? `Bearer ${process.env.PINATA_JWT}`
+      : `Bearer ${process.env.IPFS_API_SECRET}`;
 
     const response = await axios.post(`${IPFS_API_URL}/pinFileToIPFS`, formData, {
       headers: {
         ...formData.getHeaders(),
-        Authorization: `Bearer ${process.env.IPFS_API_SECRET}`,
+        Authorization: authHeader,
       },
     });
 
     if (response.data && response.data.IpfsHash) {
       console.log(`Metadata uploaded to IPFS with hash: ${response.data.IpfsHash}`);
+      console.log(`Metadata accessible at: ${IPFS_GATEWAY_URL}${response.data.IpfsHash}`);
       return response.data.IpfsHash;
     } else {
       console.error("Pinata metadata response did not contain Hash field. Full response data:", response.data);
@@ -137,7 +204,7 @@ const uploadMetadataToIPFS = async (metadata) => {
 };
 
 /**
- * Get content from IPFS
+ * Get content from IPFS with legacy format support
  * @param {String} ipfsHash - IPFS hash
  * @returns {Promise<Object>} - Content data
  */
@@ -146,13 +213,32 @@ const getFromIPFS = async (ipfsHash) => {
     // Check mock storage first in development mode
     if (USE_MOCK_IPFS && mockIpfsStorage.has(ipfsHash)) {
       console.log(`Getting mock content for hash: ${ipfsHash}`);
-      return mockIpfsStorage.get(ipfsHash).content;
+      const mockData = mockIpfsStorage.get(ipfsHash).content;
+      
+      // Handle both string and object formats from mock storage
+      let data = typeof mockData === 'string' ? JSON.parse(mockData) : mockData;
+      
+      // Check if it's legacy format and migrate if needed
+      if (isLegacyMetadata(data)) {
+        console.log('Migrating legacy metadata from mock storage');
+        data = migrateLegacyMetadata(data);
+      }
+      
+      return data;
     }
 
     // Check cache first
     const cacheKey = `ipfs:${ipfsHash}`;
     const cachedData = await getCache(cacheKey);
     if (cachedData) {
+      // Check if cached data is legacy format
+      if (isLegacyMetadata(cachedData)) {
+        console.log('Migrating legacy metadata from cache');
+        const migratedData = migrateLegacyMetadata(cachedData);
+        // Update cache with migrated data
+        await setCache(cacheKey, migratedData, 3600);
+        return migratedData;
+      }
       return cachedData;
     }
 
@@ -183,7 +269,13 @@ const getFromIPFS = async (ipfsHash) => {
       throw error;
     }
 
-    // Cache the result
+    // Check if retrieved data is legacy format and migrate if needed
+    if (isLegacyMetadata(data)) {
+      console.log(`Migrating legacy metadata from IPFS hash: ${ipfsHash}`);
+      data = migrateLegacyMetadata(data);
+    }
+
+    // Cache the result (migrated if it was legacy)
     await setCache(cacheKey, data, 3600); // Cache for 1 hour
 
     return data;
@@ -245,6 +337,109 @@ const pinToIPFS = async (ipfsHash) => {
 };
 
 /**
+ * Upload voting results to IPFS for simple voting system
+ * @param {Object} votingResults - Voting results data
+ * @returns {Promise<String>} - IPFS hash
+ */
+const uploadVotingResultsToIPFS = async (votingResults) => {
+  try {
+    const formattedResults = {
+      // Core voting information
+      contentId: votingResults.contentId,
+      title: votingResults.title,
+      
+      // Simple voting results
+      totalVotes: votingResults.totalVotes || 0,
+      upvotes: votingResults.upvotes || 0,
+      downvotes: votingResults.downvotes || 0,
+      voteBreakdown: votingResults.voteBreakdown || {},
+      
+      // Voting period information
+      votingStartTime: votingResults.votingStartTime,
+      votingEndTime: votingResults.votingEndTime,
+      finalizedAt: new Date().toISOString(),
+      
+      // System metadata
+      votingSystem: "simple",
+      version: "2.0",
+      resultType: "final",
+      
+      // Blockchain information
+      blockchainResults: votingResults.blockchainResults || null,
+      transactionHash: votingResults.transactionHash || null,
+      blockNumber: votingResults.blockNumber || null,
+      
+      // Additional metadata
+      participationRate: votingResults.participationRate || null,
+      consensus: votingResults.consensus || null,
+      
+      // Schema identifier
+      schema: "proofchain-voting-results-v2"
+    };
+
+    console.log("Uploading voting results to IPFS:", {
+      contentId: formattedResults.contentId,
+      totalVotes: formattedResults.totalVotes,
+      votingSystem: formattedResults.votingSystem
+    });
+
+    // Use mock implementation in development mode
+    if (USE_MOCK_IPFS) {
+      console.log("Using mock IPFS implementation for voting results");
+      const hash = generateMockIpfsHash();
+      mockIpfsStorage.set(hash, {
+        content: formattedResults,
+        fileName: "voting-results.json",
+        timestamp: Date.now(),
+      });
+      console.log(`Mock voting results uploaded with hash: ${hash}`);
+      return hash;
+    }
+
+    const formData = new FormData();
+    const resultsBuffer = Buffer.from(JSON.stringify(formattedResults, null, 2));
+    formData.append("file", resultsBuffer, { filename: "voting-results.json" });
+
+    // Add Pinata metadata for voting results
+    const pinataMetadata = JSON.stringify({
+      name: `ProofChain-${formattedResults.contentId}-results`,
+      keyvalues: {
+        contentId: formattedResults.contentId.toString(),
+        votingSystem: formattedResults.votingSystem,
+        resultType: formattedResults.resultType,
+        version: formattedResults.version,
+        totalVotes: formattedResults.totalVotes.toString()
+      }
+    });
+    formData.append("pinataMetadata", pinataMetadata);
+
+    // Use either PINATA_JWT or IPFS_API_SECRET for authorization
+    const authHeader = process.env.PINATA_JWT 
+      ? `Bearer ${process.env.PINATA_JWT}`
+      : `Bearer ${process.env.IPFS_API_SECRET}`;
+
+    const response = await axios.post(`${IPFS_API_URL}/pinFileToIPFS`, formData, {
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: authHeader,
+      },
+    });
+
+    if (response.data && response.data.IpfsHash) {
+      console.log(`Voting results uploaded to IPFS with hash: ${response.data.IpfsHash}`);
+      console.log(`Results accessible at: ${IPFS_GATEWAY_URL}${response.data.IpfsHash}`);
+      return response.data.IpfsHash;
+    } else {
+      console.error("Pinata voting results response did not contain Hash field. Full response data:", response.data);
+      throw new Error("Failed to get IPFS hash from voting results response");
+    }
+  } catch (error) {
+    console.error("Error uploading voting results to IPFS:", error.message);
+    throw new Error(`Failed to upload voting results to IPFS: ${error.message}`);
+  }
+};
+
+/**
  * Create IPFS URL from hash
  * @param {String} ipfsHash - IPFS hash
  * @returns {String} - IPFS URL
@@ -256,6 +451,7 @@ const getIPFSUrl = (ipfsHash) => {
 module.exports = {
   uploadToIPFS,
   uploadMetadataToIPFS,
+  uploadVotingResultsToIPFS,
   getFromIPFS,
   pinToIPFS,
   getIPFSUrl,

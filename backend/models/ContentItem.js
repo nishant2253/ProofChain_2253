@@ -20,11 +20,11 @@ const contentItemSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    commitDeadline: {
+    votingStartTime: {
       type: Date,
       required: true,
     },
-    revealDeadline: {
+    votingEndTime: {
       type: Date,
       required: true,
     },
@@ -103,6 +103,40 @@ const contentItemSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    votes: [{
+      voter: {
+        type: String,
+        required: true,
+      },
+      vote: {
+        type: Number,
+        required: true, // 1 for upvote, 0 for downvote
+      },
+      tokenType: {
+        type: Number,
+        required: true,
+      },
+      stakeAmount: {
+        type: String,
+        required: true,
+      },
+      confidence: {
+        type: Number,
+        default: 5,
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
+    upvotes: {
+      type: Number,
+      default: 0,
+    },
+    downvotes: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -111,35 +145,53 @@ const contentItemSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for status based on deadlines and finalization
+// Virtual for status based on voting period and finalization
 contentItemSchema.virtual("status").get(function () {
   const now = new Date();
 
   if (this.isFinalized) {
     return "finalized";
-  } else if (now > this.revealDeadline) {
-    return "pendingFinalization";
-  } else if (now > this.commitDeadline) {
-    return "revealing";
-  } else {
-    return "committing";
   }
+  
+  // Handle legacy content with old commit-reveal deadlines
+  if (this.commitDeadline && this.revealDeadline && !this.votingStartTime && !this.votingEndTime) {
+    if (now < this.commitDeadline) {
+      return "pending"; // Treat as pending until migrated
+    } else if (now < this.revealDeadline) {
+      return "live"; // Treat as live voting period
+    } else {
+      return "expired";
+    }
+  }
+  
+  // New simple voting system
+  if (this.votingStartTime && this.votingEndTime) {
+    if (now > this.votingEndTime) {
+      return "expired";
+    } else if (now >= this.votingStartTime && now <= this.votingEndTime) {
+      return "live";
+    } else {
+      return "pending";
+    }
+  }
+  
+  // Fallback for content without proper voting periods
+  return "pending";
 });
 
-// Virtual for time remaining in current phase
+// Virtual for time remaining in voting period
 contentItemSchema.virtual("timeRemaining").get(function () {
   const now = new Date();
-  let deadline;
 
-  if (now <= this.commitDeadline) {
-    deadline = this.commitDeadline;
-  } else if (now <= this.revealDeadline) {
-    deadline = this.revealDeadline;
+  if (now < this.votingStartTime) {
+    // Time until voting starts
+    return Math.max(0, this.votingStartTime - now);
+  } else if (now <= this.votingEndTime) {
+    // Time until voting ends
+    return Math.max(0, this.votingEndTime - now);
   } else {
     return 0;
   }
-
-  return Math.max(0, deadline - now);
 });
 
 // Virtual for winning vote option name

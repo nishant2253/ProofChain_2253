@@ -99,21 +99,9 @@ export const getTokenDistribution = () => api.get("/tokens/distribution");
 // Consensus endpoints
 export const getConsensusStats = () => api.get("/consensus/stats");
 export const getVotingTimeline = () => api.get("/consensus/timeline");
-export const submitVote = (contentId, voteData) => {
-  // Extract type and create a new object without it for the actual payload
-  const { type, ...payload } = voteData;
-
-  // Use the correct endpoint based on the vote type
-  if (type === "commit") {
-    return api.post(`/content/${contentId}/commit`, payload);
-  } else if (type === "reveal") {
-    return api.post(`/content/${contentId}/reveal`, payload);
-  } else if (type === "finalize") {
-    return api.post(`/content/${contentId}/finalize`, payload);
-  } else {
-    // Default fallback to the old endpoint (should not be hit if type is always provided)
-    return api.post(`/consensus/${contentId}/vote`, payload);
-  }
+export const submitVote = (voteData) => {
+  // Simple voting endpoint - no more commit/reveal
+  return api.post(`/consensus/vote`, voteData);
 };
 export const getVoteStatus = (contentId, address) =>
   api.get(`/content/${contentId}/commit`, { params: { address } });

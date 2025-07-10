@@ -2,6 +2,7 @@ const { ContentItem, CommitInfo, RevealInfo } = require("../models");
 const {
   uploadToIPFS,
   uploadMetadataToIPFS,
+  uploadVotingResultsToIPFS,
   getFromIPFS,
   pinToIPFS,
 } = require("./ipfsService");
@@ -36,7 +37,7 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       fileHash = await uploadToIPFS(fileBuffer, fileName);
     }
 
-    // Create metadata
+    // Create metadata for simple voting system
     const metadata = {
       title: contentData.title,
       description: contentData.description || "",
@@ -45,6 +46,18 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       creator: signer.address.toLowerCase(),
       timestamp: Date.now(),
       tags: contentData.tags || [],
+      
+      // Simple voting system specific fields
+      votingStartTime: contentData.votingStartTime,
+      votingEndTime: contentData.votingEndTime,
+      votingSystem: "simple",
+      version: "2.0",
+      
+      // Additional metadata for better organization
+      category: contentData.category || "general",
+      language: contentData.language || "en",
+      submissionMethod: "api",
+      blockchainNetwork: process.env.BLOCKCHAIN_NETWORK || "localhost",
     };
 
     // Upload metadata to IPFS
@@ -57,8 +70,30 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
     }
     await Promise.all(pinPromises);
 
-    // Calculate voting duration in seconds
-    const votingDuration = contentData.votingDuration || MIN_VOTING_PERIOD;
+    // Use provided voting period or default
+    const votingStartTime = contentData.votingStartTime || Date.now();
+    const votingEndTime = contentData.votingEndTime || (Date.now() + MIN_VOTING_PERIOD * 1000);
+    const votingDuration = Math.floor((votingEndTime - votingStartTime) / 1000);
+    
+    // Ensure minimum duration of 1 hour (3600 seconds)
+    const minDuration = 3600; // 1 hour
+    const maxDuration = 7 * 24 * 3600; // 7 days
+    
+    if (votingDuration < minDuration) {
+      throw new Error(`Voting period must be at least 1 hour. Current duration: ${Math.floor(votingDuration / 60)} minutes. Please set a longer voting period.`);
+    }
+    
+    if (votingDuration > maxDuration) {
+      throw new Error(`Voting period must be at most 7 days. Current duration: ${Math.floor(votingDuration / (24 * 3600))} days. Please set a shorter voting period.`);
+    }
+    
+    console.log("Voting duration validation:", {
+      votingStartTime: new Date(votingStartTime).toISOString(),
+      votingEndTime: new Date(votingEndTime).toISOString(),
+      votingDuration: `${votingDuration} seconds (${Math.floor(votingDuration / 3600)} hours)`,
+      minRequired: `${minDuration} seconds (1 hour)`,
+      maxAllowed: `${maxDuration} seconds (7 days)`
+    });
 
     // Submit content to blockchain
     const { contentId, transactionHash } = await submitContent(
@@ -77,8 +112,8 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       creator: signer.address.toLowerCase(),
       tags: metadata.tags,
       submissionTime: new Date(),
-      commitDeadline: new Date(Date.now() + (votingDuration * 1000) / 2), // 50% for commit phase
-      revealDeadline: new Date(Date.now() + votingDuration * 1000),
+      votingStartTime: new Date(votingStartTime),
+      votingEndTime: new Date(votingEndTime),
       isActive: true,
       transactionHash,
     });
@@ -132,9 +167,10 @@ const getContentById = async (contentId) => {
       );
     }
 
-    // Get commit and reveal counts
-    const commitCount = await CommitInfo.countDocuments({ contentId });
-    const revealCount = await RevealInfo.countDocuments({ contentId });
+    // Get vote counts for simple voting system
+    const voteCount = content.votes ? content.votes.length : 0;
+    const upvotes = content.upvotes || 0;
+    const downvotes = content.downvotes || 0;
 
     // Get blockchain results if finalized
     let blockchainResults = null;
@@ -153,8 +189,9 @@ const getContentById = async (contentId) => {
     const contentData = {
       ...content.toObject(),
       metadata,
-      commitCount,
-      revealCount,
+      voteCount,
+      upvotes,
+      downvotes,
       blockchainResults,
       status: content.status, // Virtual property
       timeRemaining: content.timeRemaining, // Virtual property
@@ -206,20 +243,21 @@ const getContentList = async (options = {}) => {
     const query = {};
 
     if (status) {
-      // Convert status to query conditions
+      // Convert status to query conditions for new simple voting system
+      const now = new Date();
       switch (status) {
-        case "committing":
+        case "pending":
           query.isActive = true;
-          query.commitDeadline = { $gt: new Date() };
+          query.votingStartTime = { $gt: now };
           break;
-        case "revealing":
+        case "live":
           query.isActive = true;
-          query.commitDeadline = { $lte: new Date() };
-          query.revealDeadline = { $gt: new Date() };
+          query.votingStartTime = { $lte: now };
+          query.votingEndTime = { $gt: now };
           break;
-        case "pendingFinalization":
+        case "expired":
           query.isActive = true;
-          query.revealDeadline = { $lte: new Date() };
+          query.votingEndTime = { $lte: now };
           query.isFinalized = false;
           break;
         case "finalized":
@@ -254,25 +292,21 @@ const getContentList = async (options = {}) => {
     ]);
 
     // Format results
-    const results = await Promise.all(
-      contents.map(async (content) => {
-        const commitCount = await CommitInfo.countDocuments({
-          contentId: content.contentId,
-        });
-        const revealCount = await RevealInfo.countDocuments({
-          contentId: content.contentId,
-        });
+    const results = contents.map((content) => {
+      const voteCount = content.votes ? content.votes.length : 0;
+      const upvotes = content.upvotes || 0;
+      const downvotes = content.downvotes || 0;
 
-        return {
-          ...content.toObject(),
-          commitCount,
-          revealCount,
-          status: content.status, // Virtual property
-          timeRemaining: content.timeRemaining, // Virtual property
-          formattedTotalUSDValue: formatUSDValue(content.totalUSDValue),
-        };
-      })
-    );
+      return {
+        ...content.toObject(),
+        voteCount,
+        upvotes,
+        downvotes,
+        status: content.status, // Virtual property
+        timeRemaining: content.timeRemaining, // Virtual property
+        formattedTotalUSDValue: formatUSDValue(content.totalUSDValue),
+      };
+    });
 
     // Prepare pagination data
     const totalPages = Math.ceil(total / limit);
