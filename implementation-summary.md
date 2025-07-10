@@ -48,6 +48,18 @@ The ProofChain system consists of three main components:
 - **Fix**: Added proper `submitVote()` API integration
 - **Impact**: Voting functionality now works end-to-end
 
+### 6. **ObjectId Casting Error (CRITICAL)**
+- **Issue**: `CastError: Cast to ObjectId failed for value "8" (type number) at path "_id"`
+- **Root Cause**: Backend trying to use numeric contentId as MongoDB ObjectId
+- **Fix**: Updated query logic to search by contentId field first, then _id
+- **Impact**: Vote submission now works without database casting errors
+
+### 7. **Missing MetaMask Integration (CRITICAL)**
+- **Issue**: Votes submitted directly to database without blockchain token staking
+- **Root Cause**: Voting bypassed MetaMask transaction and blockchain interaction
+- **Fix**: Integrated 2-step voting process with MetaMask transaction + backend recording
+- **Impact**: True blockchain voting with token staking and transaction proof
+
 ## 🚀 **New Features Implemented**
 
 ### 1. **Enhanced IPFS/Pinata Integration**
@@ -76,6 +88,13 @@ The ProofChain system consists of three main components:
 - **Added**: Database migration script for batch processing
 - **Added**: Backward compatibility maintenance
 
+### 5. **MetaMask Blockchain Integration**
+- **Added**: True blockchain voting with MetaMask transaction confirmation
+- **Added**: Token staking mechanism for vote validation
+- **Added**: 2-step voting process (blockchain → backend recording)
+- **Added**: Transaction hash recording for vote verification
+- **Added**: Economic incentive system with staked tokens
+
 ## 📁 **Files Modified/Created**
 
 ### **Backend (11 files)**
@@ -92,10 +111,10 @@ The ProofChain system consists of three main components:
 11. `backend/utils/helpers.js` - Enhanced utility functions
 
 ### **Frontend (4 files)**
-1. `frontend/src/components/ConsensusDashboard/index.js` - Major UI simplification
+1. `frontend/src/components/ConsensusDashboard/index.js` - Major UI simplification + MetaMask integration
 2. `frontend/src/pages/ContentSubmitPage.js` - Enhanced validation and UX
 3. `frontend/src/utils/api.js` - Simplified API calls
-4. `frontend/src/utils/blockchain.js` - Enhanced blockchain integration
+4. `frontend/src/utils/blockchain.js` - Enhanced blockchain integration + vote staking functions
 
 ### **Documentation (8 files)**
 1. `FIXES_SUMMARY.md` - **NEW** Complete fixes documentation
@@ -171,13 +190,54 @@ The ProofChain system consists of three main components:
 - **Real-time Feedback**: Instant validation and error handling
 - **Legacy Support**: Backward compatibility with existing data
 
+## 🛠️ **Backend Troubleshooting Guide**
+
+### **Common Port Conflict Error**
+```bash
+Error: listen EADDRINUSE: address already in use :::3000
+```
+
+### **Solution Steps:**
+1. **Find process using port 3000:**
+   ```bash
+   lsof -i :3000
+   # or
+   netstat -tulpn | grep :3000
+   ```
+
+2. **Kill the process:**
+   ```bash
+   pkill -f "npm start"
+   # or kill specific PID
+   kill -9 <PID>
+   ```
+
+3. **Alternative: Use different port:**
+   ```bash
+   PORT=3001 npm start
+   ```
+
+4. **Restart backend:**
+   ```bash
+   cd backend && npm start
+   ```
+
+### **Environment Variables Not Loading**
+If IPFS still shows "mock" after restart:
+```bash
+cd backend
+grep PINATA_JWT .env  # Verify token exists
+export PINATA_JWT="your_jwt_token_here"  # Manual override
+npm start
+```
+
 ## 🔮 **Next Steps**
 
 1. **Production Deployment**: System ready for live deployment
-2. **User Testing**: Comprehensive end-to-end workflow testing
+2. **User Testing**: Comprehensive end-to-end workflow testing with MetaMask
 3. **Performance Monitoring**: Track system performance and user engagement
 4. **Feature Enhancements**: Based on user feedback and usage patterns
-5. **Documentation Updates**: User guides for new simple voting process
+5. **Documentation Updates**: User guides for new simple voting process with token staking
 
 ## 📈 **Expected Impact**
 

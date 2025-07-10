@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getContentList, submitVote, getVoteStatus } from "../../utils/api";
 import useWallet from "../../hooks/useWallet";
-import { getContract, generateCommitHash, generateRandomSalt } from "../../utils/blockchain";
+import { getContract, generateCommitHash, generateRandomSalt, submitVoteToBlockchain } from "../../utils/blockchain";
 import { ethers } from "ethers";
 
 // Content Preview Component with proper error handling
@@ -306,15 +306,29 @@ const ConsensusDashboard = () => {
     setVoteStatus(null);
 
     try {
-      setVoteStatus({ type: 'info', message: 'Submitting your vote...' });
+      setVoteStatus({ type: 'info', message: 'Please confirm the transaction in MetaMask...' });
 
-      // Submit vote directly to backend API (simplified voting)
+      // Step 1: Submit vote to blockchain with token staking
+      const blockchainResult = await submitVoteToBlockchain(
+        signer,
+        selectedContent.contentId || selectedContent._id,
+        parseInt(voteData.vote),
+        parseInt(voteData.tokenType),
+        voteData.stakeAmount,
+        parseInt(voteData.confidence)
+      );
+
+      setVoteStatus({ type: 'info', message: 'Transaction confirmed! Recording vote...' });
+
+      // Step 2: Submit vote to backend API with blockchain transaction details
       const voteSubmission = {
         contentId: selectedContent.contentId || selectedContent._id,
         vote: parseInt(voteData.vote),
         tokenType: parseInt(voteData.tokenType),
         stakeAmount: voteData.stakeAmount,
-        confidence: parseInt(voteData.confidence)
+        confidence: parseInt(voteData.confidence),
+        transactionHash: blockchainResult.transactionHash,
+        blockNumber: blockchainResult.blockNumber
       };
 
       const response = await submitVote(voteSubmission);

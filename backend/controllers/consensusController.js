@@ -93,13 +93,18 @@ const submitSimpleVote = async (req, res) => {
         message: "User authentication required"
       });
     }
-    // Find the content item
-    const content = await ContentItem.findOne({
-      $or: [
-        { contentId: contentId },
-        { _id: contentId }
-      ]
-    });
+    // Find the content item by contentId (numeric) first, then try _id if it's a valid ObjectId
+    let content;
+    
+    // First try to find by contentId (numeric field)
+    content = await ContentItem.findOne({ contentId: contentId });
+    
+    // If not found and contentId looks like an ObjectId, try finding by _id
+    if (!content && typeof contentId === 'string' && contentId.match(/^[0-9a-fA-F]{24}$/)) {
+      content = await ContentItem.findById(contentId);
+    }
+    
+    console.log(`Looking for content with contentId: ${contentId}, found: ${!!content}`);
 
     if (!content) {
       return res.status(404).json({

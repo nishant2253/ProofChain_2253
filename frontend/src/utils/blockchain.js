@@ -1,19 +1,16 @@
 import { ethers } from "ethers";
 
-// ABI for the ProofChainMultiTokenVoting contract
-// This is a minimal ABI containing only the functions we need to interact with
+// ABI for the ProofChainSimpleVoting contract
+// Updated for simple voting system with token staking
 const CONTRACT_ABI = [
-  "function commitMultiTokenVote(uint256 contentId, bytes32 commitHash, uint8 tokenType, uint256 stakeAmount, bytes32[] calldata merkleProof) external payable",
-  "function revealMultiTokenVote(uint256 contentId, uint8 vote, uint256 confidence, uint256 salt) external",
-  "function finalizeMultiTokenVoting(uint256 contentId) external",
   "function submitContent(string calldata ipfsHash, uint256 votingDuration) external returns (uint256 contentId)",
+  "function submitVote(uint256 contentId, uint8 vote, uint8 tokenType, uint256 stakeAmount, uint256 confidence) external payable",
   "function getTokenPriceUSD(uint8 tokenType) public view returns (uint256)",
   "function convertToUSD(uint8 tokenType, uint256 tokenAmount) public view returns (uint256)",
   "function calculateQuadraticWeightUSD(uint256 usdValue) public pure returns (uint256)",
   "function isVerifiedIdentity(address user, bytes32[] calldata merkleProof) public view returns (bool)",
-  "event ContentSubmitted(uint256 indexed contentId, string ipfsHash, uint256 commitDeadline, uint256 revealDeadline)",
-  "event MultiTokenVoteCommitted(uint256 indexed contentId, address indexed voter, uint8 tokenType, uint256 stakeAmount, uint256 usdValue)",
-  "event MultiTokenVoteRevealed(uint256 indexed contentId, address indexed voter, uint8 vote, uint256 confidence, uint256 quadraticWeight)",
+  "event ContentSubmitted(uint256 indexed contentId, string ipfsHash, uint256 votingStartTime, uint256 votingEndTime)",
+  "event VoteSubmitted(uint256 indexed contentId, address indexed voter, uint8 vote, uint8 tokenType, uint256 stakeAmount, uint256 usdValue, uint256 confidence)",
   "event VotingFinalized(uint256 indexed contentId, uint8 winningOption, uint256 totalParticipants, uint256 totalUSDStaked)",
 ];
 
@@ -48,4 +45,58 @@ export const generateCommitHash = (vote, confidence, salt, address, tokenType) =
 
 export const generateRandomSalt = () => {
   return ethers.utils.hexlify(ethers.utils.randomBytes(32));
+};
+
+// Submit vote with token staking to blockchain
+export const submitVoteToBlockchain = async (signer, contentId, vote, tokenType, stakeAmount, confidence) => {
+  try {
+    const contract = getContract(signer);
+    
+    console.log("Submitting vote to blockchain:", {
+      contentId,
+      vote,
+      tokenType,
+      stakeAmount,
+      confidence,
+      contractAddress: contract.address
+    });
+
+    // Convert stake amount to wei for ETH (tokenType 1)
+    let stakeAmountWei;
+    if (tokenType === 1) { // ETH
+      stakeAmountWei = ethers.utils.parseEther(stakeAmount.toString());
+    } else {
+      // For other tokens, you might need different conversion
+      stakeAmountWei = ethers.utils.parseUnits(stakeAmount.toString(), 18);
+    }
+
+    // For ETH, we need to send value with the transaction
+    const txOptions = {};
+    if (tokenType === 1) { // ETH
+      txOptions.value = stakeAmountWei;
+    }
+
+    const tx = await contract.submitVote(
+      contentId,
+      vote,
+      tokenType,
+      stakeAmountWei,
+      confidence,
+      txOptions
+    );
+    
+    console.log("Vote transaction submitted:", tx.hash);
+    
+    const receipt = await tx.wait();
+    console.log("Vote transaction confirmed:", receipt);
+    
+    return {
+      transactionHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed.toString()
+    };
+  } catch (error) {
+    console.error("Blockchain vote submission error:", error);
+    throw error;
+  }
 };

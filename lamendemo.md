@@ -53,6 +53,16 @@ This document demonstrates the complete transformation of ProofChain from a comp
    - **Fix**: Added missing API integration in frontend voting handlers
    - **Impact**: End-to-end voting functionality now works
 
+6. **ObjectId Database Error**
+   - **Error**: `CastError: Cast to ObjectId failed for value "8" (type number)`
+   - **Fix**: Updated database query logic to handle numeric contentId properly
+   - **Impact**: Vote submission works without database casting errors
+
+7. **Missing Blockchain Integration**
+   - **Error**: Votes submitted directly without MetaMask transaction
+   - **Fix**: Integrated 2-step voting with MetaMask confirmation and token staking
+   - **Impact**: True blockchain voting with economic incentives
+
 ### **Data Integrity Issues**
 6. **Legacy Data Compatibility**
    - **Issue**: Old commit-reveal data incompatible with new system
@@ -93,6 +103,13 @@ This document demonstrates the complete transformation of ProofChain from a comp
 - **Optimized Database Queries**: Improved performance for voting period queries
 - **Modular Service Architecture**: Clean separation of concerns for maintainability
 - **Comprehensive Logging**: Detailed logs for debugging and monitoring
+
+### **5. MetaMask Blockchain Integration**
+- **Token Staking Mechanism**: Users must stake ETH to vote (prevents spam voting)
+- **2-Step Voting Process**: Blockchain transaction → Backend recording
+- **Transaction Verification**: Every vote has blockchain transaction hash proof
+- **Economic Incentives**: Staked tokens create skin in the game
+- **MetaMask UX**: Seamless wallet integration with transaction confirmations
 
 ## 📁 **Complete File Modification Summary**
 
@@ -152,12 +169,12 @@ This document demonstrates the complete transformation of ProofChain from a comp
 4. High gas costs and transaction complexity
 5. Many users abandoned the process due to complexity
 
-#### **After (Simple Voting)**
+#### **After (Simple Voting with MetaMask)**
 1. **Single Step**: User clicks upvote or downvote button
-2. Immediate vote recording with real-time feedback
-3. Simple state management with clear status indicators
-4. Lower gas costs and single transaction
-5. Intuitive process encourages participation
+2. **MetaMask Popup**: User confirms transaction and stakes tokens
+3. **Blockchain Recording**: Vote recorded on blockchain with transaction hash
+4. **Backend Sync**: Vote details stored in database with blockchain proof
+5. **Real-time Feedback**: Immediate confirmation with transaction details
 
 ### **Results and Finalization**
 
@@ -253,14 +270,61 @@ This document demonstrates the complete transformation of ProofChain from a comp
 - **Security**: Secure by design with proper validation
 - **Scalability**: Architecture supports future growth
 
+## 🛠️ **Backend Troubleshooting Guide**
+
+### **Common Issues and Solutions**
+
+#### **1. Port Already in Use Error**
+```bash
+Error: listen EADDRINUSE: address already in use :::3000
+```
+
+**Solution:**
+```bash
+# Find and kill process using port 3000
+lsof -i :3000
+pkill -f "npm start"
+# or kill specific process
+kill -9 <PID>
+
+# Restart backend
+cd backend && npm start
+```
+
+#### **2. Environment Variables Not Loading**
+If IPFS shows "mock" instead of real Pinata:
+```bash
+cd backend
+# Check if PINATA_JWT exists
+grep PINATA_JWT .env
+
+# Manual override if needed
+export PINATA_JWT="your_jwt_token_here"
+npm start
+```
+
+#### **3. MetaMask Connection Issues**
+- Ensure MetaMask is installed and unlocked
+- Check if correct network is selected (localhost:8545 for development)
+- Verify contract is deployed on the selected network
+
+#### **4. Database Connection Errors**
+```bash
+# Start MongoDB if not running
+sudo systemctl start mongod
+# or
+mongod --dbpath /path/to/your/db
+```
+
 ## 🚀 **Deployment and Next Steps**
 
 ### **Immediate Deployment Readiness**
 1. **Environment Setup**: All configuration files updated
 2. **Database Migration**: Scripts ready for production migration
 3. **IPFS Configuration**: Pinata integration properly configured
-4. **Error Monitoring**: Comprehensive logging for production monitoring
-5. **Performance Monitoring**: Metrics collection for system optimization
+4. **MetaMask Integration**: Blockchain voting with token staking ready
+5. **Error Monitoring**: Comprehensive logging for production monitoring
+6. **Performance Monitoring**: Metrics collection for system optimization
 
 ### **Recommended Next Steps**
 1. **Production Deployment**: Deploy to live environment
