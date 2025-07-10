@@ -6,6 +6,7 @@ import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import ContentSubmitPage from "./pages/ContentSubmitPage";
 import ConsensusDashboard from "./components/ConsensusDashboard";
+import Profile from "./pages/Profile";
 import useWallet from "./hooks/useWallet";
 
 // Create a simple test component first to verify the theme system works
@@ -98,6 +99,16 @@ const App = () => {
             <Route path="/submit" element={
               <ProtectedRoute>
                 <ContentSubmitPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/:address" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/test" element={<TestHomePage />} />

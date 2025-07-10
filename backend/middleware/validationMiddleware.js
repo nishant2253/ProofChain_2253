@@ -62,13 +62,13 @@ const schemas = {
   // User schemas
   registerUser: Joi.object({
     address: Joi.string().required(),
-    signature: Joi.string(),
+    signature: Joi.string().optional(),
     userData: Joi.object({
-      username: Joi.string(),
-      email: Joi.string().email(),
-      bio: Joi.string(),
-      profileImageUrl: Joi.string().uri(),
-    }),
+      username: Joi.string().optional(),
+      email: Joi.string().email().optional(),
+      bio: Joi.string().optional(),
+      profileImageUrl: Joi.string().uri().optional(),
+    }).optional(),
   }),
 
   // Content schemas

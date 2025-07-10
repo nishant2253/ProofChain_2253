@@ -49,14 +49,18 @@ api.interceptors.response.use(
 
 // User endpoints
 export const loginUser = (credentials) => api.post("/users/login", credentials);
-export const registerUser = (userData) => api.post("/users/register", userData);
-export const updateUserProfile = (userId, data) =>
-  api.put(`/users/${userId}`, data);
-export const getUserProfile = (userId) => api.get(`/users/${userId}`);
-export const getUserVotingHistory = (userId) =>
-  api.get(`/users/${userId}/votes`);
-export const getUserReputationHistory = (userId) =>
-  api.get(`/users/${userId}/reputation-history`);
+export const registerUser = (userData) => api.post("/users", userData);
+export const updateUserProfile = (data) => api.put("/users/me", data);
+export const getUserProfile = (address) => api.get(`/users/${address}`);
+export const getMyProfile = () => api.get("/users/me");
+export const getUserVotingHistory = (address) =>
+  api.get(`/users/${address}/votes`);
+export const getUserReputationHistory = (address) =>
+  api.get(`/users/${address}/reputation-history`);
+export const getMyVotingHistory = () => api.get("/users/me/votes");
+export const getMyReputationHistory = () => api.get("/users/me/reputation-history");
+export const verifyIdentity = (merkleProof) => 
+  api.post("/users/verify", { merkleProof });
 
 // Content endpoints
 export const getContentList = (page = 1, limit = 10) =>
@@ -88,8 +92,8 @@ export const deleteContent = (contentId) => api.delete(`/content/${contentId}`);
 
 // Token endpoints
 export const getSupportedTokens = () => api.get("/tokens/supported");
-export const getTokenBalance = (address, tokenId) =>
-  api.get(`/tokens/${tokenId}/balance/${address}`);
+export const getTokenBalance = (address, tokenType) =>
+  api.get(`/tokens/balance/${address}`, { params: { tokenType } });
 export const getTokenDistribution = () => api.get("/tokens/distribution");
 
 // Consensus endpoints

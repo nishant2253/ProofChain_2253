@@ -17,6 +17,21 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true,
+    },
+  },
+  networks: {
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
+    },
+    hardhat: {
+      chainId: 31337,
+    },
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
+      accounts: PRIVATE_KEY !== "0x0000000000000000000000000000000000000000000000000000000000000000" ? [PRIVATE_KEY] : [],
+      chainId: 11155111,
     },
   },
   etherscan: {

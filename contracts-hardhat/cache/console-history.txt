@@ -1,3 +1,25 @@
+});
+value: ethers.parseEther("100")
+to: "0xF17cF1E4F18bbe29bdeBe37Eb3e9aA4C0437a3E5",
+await owner.sendTransaction({
+const [owner] = await ethers.getSigners();
+const [owner] = await ethers.getSigners();                                                                          ││  await owner.sendTransaction({                                                                                       ││    to: "0xF17cF1E4F18bbe29bdeBe37Eb3e9aA4C0437a3E5",                                                        ││    value: ethers.parseEther("100")                                                                 ││  });
+│    value: ethers.parseEther("100")                                                                 │
+│    to: "0xF17cF1E4F18bbe29bdeBe37Eb3e9aA4C0437a3E5",                                                        │
+│  await owner.sendTransaction({                                                                                       │
+const [owner] = await ethers.getSigners();                                                                          │
+│    value: ethers.parseEther("100") // Send 100 ETH                                                                   │
+│    to: "0xF17cF1E4F18bbe29bdeBe37Eb3e9aA4C0437a3E5", // Your actual address                                                        │
+│  await owner.sendTransaction({                                                                                       │
+const [owner] = await ethers.getSigners();                                                                          │
+│    value: ethers.parseEther("100") // Send 100 ETH                                                                   │
+│    to: "YOUR_SEPOLIA_ACCOUNT_ADDRESS", // Your actual address                                                        │
+│  await owner.sendTransaction({                                                                                       │
+const [owner] = await ethers.getSigners();                                                                          │
+│    value: ethers.parseEther("100") // Send 100 ETH                                                                   │
+│    to: "YOUR_SEPOLIA_ACCOUNT_ADDRESS", // Your actual address                                                        │
+│  await owner.sendTransaction({                                                                                       │
+const [owner] = await ethers.getSigners();                                                                          │
 console.log("Deployed Merkle Root:", root);
 const root = await contract.verifiedIdentityRoot();
 const contract = await ProofChainMultiTokenVoting.attach("0x5FbDB2315678afecb367f032d93F642f64180aa3"); // Replace with your contract address

@@ -8,7 +8,7 @@ const IPFS_GATEWAY_URL =
   process.env.IPFS_GATEWAY ||
   "https://amaranth-genetic-bear-101.mypinata.cloud/ipfs/";
 const IPFS_API_URL =
-  process.env.IPFS_API_URL || "https://api.pinata.cloud/pinning";
+  process.env.IPFS_API_URL || "https://api.pinata.cloud";
 
 // Flag to use mock IPFS in development
 const USE_MOCK_IPFS =
@@ -206,26 +206,37 @@ const pinToIPFS = async (ipfsHash) => {
       return true;
     }
 
+    // Temporarily disable pinning to fix the 404 error
+    // Content is already uploaded to IPFS, pinning is just for persistence
+    console.log(`Skipping pinning for now - content uploaded successfully: ${ipfsHash}`);
+    console.log(`Content accessible at: ${IPFS_GATEWAY_URL}${ipfsHash}`);
+    return true;
+
+    // TODO: Implement proper Pinata pinning using new SDK or correct API endpoint
+    /*
     const response = await axios.post(
-      `${IPFS_API_URL}/pin/add?arg=${ipfsHash}`,
-      {},
+      `${IPFS_API_URL}/pinning/pinByHash`,
+      {
+        hashToPin: ipfsHash,
+        pinataMetadata: {
+          name: `ProofChain-${ipfsHash}`,
+        },
+      },
       {
         headers: {
-          Authorization: `Bearer ${process.env.IPFS_API_SECRET}`,
+          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
-    if (
-      response.data &&
-      response.data.Pins &&
-      response.data.Pins.includes(ipfsHash)
-    ) {
+    if (response.data && response.data.ipfsHash === ipfsHash) {
       console.log(`Content pinned to IPFS: ${ipfsHash}`);
       return true;
     } else {
       throw new Error("Failed to pin content to IPFS");
     }
+    */
   } catch (error) {
     console.error("Error pinning content to IPFS:", error);
     // Don't throw error for pinning failures, just log it

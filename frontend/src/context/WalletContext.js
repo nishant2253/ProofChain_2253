@@ -62,12 +62,8 @@ export const WalletProvider = ({ children }) => {
       // Call the backend to register/login the user
       const response = await axios.post(`${apiUrl}/users`, {
         address,
-        signature: null, // In a real implementation, you would sign a message
         userData: {
-          username: `User_${address.substring(0, 8)}`,
-          email: null,
-          bio: null,
-          profileImageUrl: null
+          username: `User_${address.substring(0, 8)}`
         },
       });
 
@@ -89,8 +85,23 @@ export const WalletProvider = ({ children }) => {
       console.error("Error details:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data
+        data: error.response?.data,
+        message: error.response?.data?.message || error.message,
       });
+      
+      // More specific error handling
+      if (error.response?.status === 400) {
+        console.error("Validation error - Request payload:", {
+          address,
+          userData: {
+            username: `User_${address.substring(0, 8)}`
+          }
+        });
+        console.error("Backend validation error:", error.response.data);
+      }
+      
+      // Don't throw error, just log it for now to allow app to continue
+      setError(`Authentication failed: ${error.response?.data?.message || error.message}`);
     }
   };
 
