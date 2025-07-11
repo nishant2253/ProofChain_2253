@@ -1,217 +1,397 @@
-# ProofChain Frontend
+# 🎨 ProofChain Frontend
 
-This is the frontend application for the ProofChain decentralized content verification system.
+> React.js application for decentralized content verification platform
 
-## Features
+[![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.3+-06B6D4.svg)](https://tailwindcss.com/)
+[![Ethers.js](https://img.shields.io/badge/Ethers.js-5.7+-purple.svg)](https://docs.ethers.io/)
 
-- Connect to Ethereum wallets (MetaMask, WalletConnect, etc.)
-- Submit content for verification
-- Participate in the commit-reveal voting scheme
-- View content verification status and results
+## 🚀 **Quick Start**
 
-## Technology Stack
+### **Prerequisites**
+- Node.js 18+
+- npm or yarn
+- MetaMask browser extension
 
-- React.js
-- TailwindCSS for styling
-- Framer Motion for animations
-- Ethers.js for blockchain interactions
-- React Router for navigation
-
-## Project Structure
-
-```
-frontend/
-├── public/             # Static files
-├── src/
-│   ├── assets/         # Images, icons, etc.
-│   ├── components/     # Reusable UI components
-│   │   ├── ConsensusDashboard/ # Data visualization dashboard
-│   │   ├── Layout/     # Page layout components
-│   │   ├── ThemeToggle/ # Dark/light theme toggle
-│   │   ├── WalletConnect/ # Wallet connection component
-│   │   └── VotingInterface/ # Two-state voting interface
-│   ├── context/        # React context providers
-│   │   ├── ThemeContext.js # Theme state management
-│   │   └── WalletContext.js # Wallet state management
-│   ├── hooks/          # Custom React hooks
-│   │   ├── useTheme.js # Theme hook
-│   │   └── useWallet.js # Wallet hook
-│   ├── pages/          # Page components
-│   │   ├── HomePage.js  # Main page with content listing
-│   │   ├── ContentSubmitPage.js # Content submission form
-│   │   ├── ContentDetailPage.js # Content details and voting
-│   │   └── Profile/    # User profile and voting history
-│   ├── utils/          # Utility functions
-│   │   ├── api.js      # API client
-│   │   ├── blockchain.js # Blockchain interactions
-│   │   └── helpers.js  # Helper functions
-│   ├── App.js          # Main application component
-│   ├── index.js        # Application entry point
-│   └── index.css       # Global styles
-├── .env                # Environment variables
-├── package.json        # Dependencies and scripts
-├── tailwind.config.js  # TailwindCSS configuration
-└── postcss.config.js   # PostCSS configuration
-```
-
-## Getting Started
-
-1. Install dependencies:
-
+### **Installation**
 ```bash
+cd frontend
 npm install
 ```
 
-2. Create a `.env` file based on `.env.example`
-
-3. Start the development server:
-
+### **Environment Setup**
 ```bash
-npm start
+cp .env.example .env
 ```
 
-## Environment Variables
+**Required Environment Variables:**
+```bash
+# API Configuration
+REACT_APP_API_URL=http://localhost:3000/api
 
-- `REACT_APP_API_URL`: URL of the backend API
-- `REACT_APP_BLOCKCHAIN_NETWORK`: Ethereum network to connect to
-- `REACT_APP_CONTRACT_ADDRESS`: Address of the ProofChain smart contract
-- `REACT_APP_IPFS_GATEWAY`: IPFS gateway URL
-- `REACT_APP_INFURA_ID`: Infura project ID for blockchain connections
-- `REACT_APP_CHAIN_ID`: Ethereum chain ID
+# Blockchain Configuration
+REACT_APP_CONTRACT_ADDRESS=0xYourContractAddress
+REACT_APP_BLOCKCHAIN_NETWORK=sepolia
+REACT_APP_CHAIN_ID=11155111
+REACT_APP_MERKLE_PROOF=["0x..."]
 
-## Building for Production
+# IPFS Configuration
+REACT_APP_IPFS_GATEWAY=https://your-pinata-gateway.mypinata.cloud/ipfs/
 
+# Development Configuration
+REACT_APP_LOCALHOST_RPC_URL=http://127.0.0.1:8545
+REACT_APP_ENABLE_TESTNET=true
+```
+
+### **Development Server**
+```bash
+npm start
+# Runs on http://localhost:5003
+```
+
+### **Build for Production**
 ```bash
 npm run build
 ```
 
-This creates an optimized production build in the `build` folder.
+## 🏗️ **Architecture**
 
-## Connecting to the Backend
+### **Technology Stack**
+- **React 18+** - Component framework
+- **Tailwind CSS** - Utility-first styling
+- **Ethers.js** - Ethereum interaction
+- **Axios** - HTTP client
+- **React Router** - Client-side routing
+- **Framer Motion** - Animations
+- **Chart.js** - Data visualization
 
-The frontend connects to the ProofChain backend API for data retrieval and submission. Make sure the backend server is running and the `REACT_APP_API_URL` environment variable is set correctly.
+### **Project Structure**
+```
+frontend/
+├── public/
+│   ├── index.html
+│   └── manifest.json
+├── src/
+│   ├── components/           # Reusable UI components
+│   │   ├── Layout/          # Main layout wrapper
+│   │   ├── WalletConnect/   # MetaMask integration
+│   │   ├── VotingInterface/ # Voting UI components
+│   │   ├── ConsensusDashboard/ # Real-time dashboard
+│   │   └── ThemeToggle/     # Dark/light mode
+│   ├── pages/               # Route components
+│   │   ├── HomePage.js      # Landing page
+│   │   ├── ContentSubmitPage.js # Content upload
+│   │   ├── ContentDetailPage.js # Content details
+│   │   └── Profile/         # User profile
+│   ├── context/             # React Context providers
+│   │   ├── WalletContext.js # Wallet state management
+│   │   └── ThemeContext.js  # Theme state management
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useWallet.js     # Wallet operations
+│   │   └── useTheme.js      # Theme operations
+│   ├── utils/               # Utility functions
+│   │   ├── api.js           # API client
+│   │   ├── blockchain.js    # Blockchain utilities
+│   │   └── helpers.js       # General helpers
+│   ├── App.js               # Main app component
+│   ├── index.js             # Entry point
+│   └── index.css            # Global styles
+├── config-overrides.js      # Webpack overrides
+├── tailwind.config.js       # Tailwind configuration
+└── package.json
+```
 
-## Blockchain Integration
+## 🔗 **Key Components**
 
-The application uses ethers.js to interact with the Ethereum blockchain. It connects to the ProofChain smart contract for content submission, voting, and verification.
+### **WalletConnect Component**
+```javascript
+// Handles MetaMask connection and wallet state
+import { useWallet } from '../hooks/useWallet';
 
-## Wallet Connection
+const { isConnected, account, connect, disconnect } = useWallet();
+```
 
-The WalletConnect component and WalletContext provide wallet connection functionality. The application supports MetaMask and other Ethereum wallets.
+### **VotingInterface Component**
+```javascript
+// Interactive voting with token staking
+const handleVote = async (contentId, vote, tokenType, stakeAmount) => {
+  // 1. MetaMask transaction for blockchain
+  // 2. Backend API call for database
+  // 3. UI state updates
+};
+```
 
-## Commit-Reveal Voting System
+### **ConsensusDashboard Component**
+```javascript
+// Real-time consensus data with auto-refresh
+useEffect(() => {
+  const interval = setInterval(fetchConsensusData, 30000);
+  return () => clearInterval(interval);
+}, []);
+```
 
-The application implements a secure two-phase voting system:
+## 🎨 **Styling System**
 
-1. **Commit Phase**: Users submit an encrypted hash of their vote, confidence level, and a random salt
-2. **Reveal Phase**: Users reveal their actual vote and salt, which is verified against the commitment
-
-This prevents front-running and other manipulation attacks by ensuring votes cannot be known until the reveal phase.
-
-## Components
-
-### WalletConnect
-
-Handles wallet connection and displays the current connection status. It shows the connected address when a wallet is connected and provides a button to connect or disconnect.
-
-### VotingInterface
-
-A dynamic component that adapts to the current voting phase:
-
-- **Commit Phase**: Form for submitting encrypted votes with token selection
-- **Reveal Phase**: Form for revealing previously committed votes
-- **Pending Finalization**: Interface for finalizing voting
-- **Finalized**: Display of voting results
-
-### Layout
-
-Provides a consistent layout for all pages with header, navigation, and footer. Includes responsive mobile navigation and theme toggle.
-
-### ConsensusDashboard
-
-Data visualization dashboard that displays:
-
-- Consensus statistics (total votes, participants, confidence, consensus rate)
-- Consensus timeline chart showing voting patterns over time
-- Token distribution doughnut chart
-- Content status breakdown
-- Recent activity list
-
-### ThemeToggle
-
-Toggle button for switching between dark and light themes with smooth animations.
-
-## Pages
-
-### HomePage
-
-Displays a list of content items with their status, voting phase, and deadlines. Supports pagination and filtering.
-
-### ContentSubmitPage
-
-Form for submitting new content for verification. Includes fields for title, description, content URL, and voting duration.
-
-### ContentDetailPage
-
-Displays detailed information about a content item and provides the appropriate voting interface based on the current voting phase.
-
-### Profile
-
-User profile page showing:
-
-- User information and reputation level
-- Voting statistics (total votes, accuracy, staked amounts)
-- Recent activity
-- Complete voting history with filtering and sorting
-
-## Theme System
-
-The application supports both light and dark themes:
-
-- Uses TailwindCSS dark mode with class strategy
-- Persists theme preference in local storage
-- Respects user's system preference on first visit
-- Provides smooth transitions between themes
-- Includes glass morphism effects and gradients
-
-## Styling & Animations
-
-The application uses a combination of technologies for styling and animations:
-
-- TailwindCSS for utility-based styling
-- Framer Motion for animations and transitions
-- Custom animations for micro-interactions
-- Responsive design for all screen sizes
-- Glass morphism effects for cards and modals
-
-## Port Configuration
-
-The frontend development server runs on port 5003 by default to avoid conflicts with the backend server (which runs on port 3000). This configuration is set in the `package.json` file:
-
-```json
-"scripts": {
-  "start": "PORT=5003 react-scripts start",
-  "build": "react-scripts build",
-  "test": "react-scripts test",
-  "eject": "react-scripts eject"
+### **Tailwind CSS Configuration**
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#5BE2FF',
+        secondary: '#B388FC',
+        accent: '#FF6B9D'
+      }
+    }
+  }
 }
 ```
 
-## API Configuration
-
-The frontend connects to the backend API running on port 3000. The API base URL is configured in `src/utils/api.js`:
-
-```javascript
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000/api";
+### **CSS Custom Properties**
+```css
+/* index.css - Theme variables */
+:root {
+  --bg-gradient: linear-gradient(135deg, #0F0F23 0%, #1A1A2E 100%);
+  --text-main: #FFFFFF;
+  --text-sub: #B0B0B0;
+  --accent-blue: #5BE2FF;
+  --accent-purple: #B388FC;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --shadow: 0 8px 32px rgba(91, 226, 255, 0.1);
+}
 ```
 
-## Recent Updates
+## 🔌 **API Integration**
 
-- Fixed API connection issues by updating the API base URL to point to the correct backend port
-- Resolved React Router warnings by adding future flags to BrowserRouter:
-  ```javascript
-  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-  ```
-- Fixed manifest.json to remove references to missing logo files
-- Implemented proper port configuration to avoid conflicts between frontend and backend servers
+### **API Client Setup**
+```javascript
+// utils/api.js
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+// Auto-attach auth token
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('authToken');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+```
+
+### **Key API Functions**
+```javascript
+// Content operations
+export const submitContent = (contentData) => api.post('/content', contentData);
+export const getContentList = (page, limit) => api.get('/content', { params: { page, limit } });
+export const getContentById = (id) => api.get(`/content/${id}`);
+
+// Voting operations
+export const submitVote = (voteData) => api.post('/consensus/vote', voteData);
+export const getConsensusStats = () => api.get('/consensus/stats');
+
+// User operations
+export const registerUser = (userData) => api.post('/users', userData);
+export const getMyProfile = () => api.get('/users/me');
+```
+
+## ⚡ **State Management**
+
+### **Wallet Context**
+```javascript
+// context/WalletContext.js
+const WalletContext = createContext();
+
+export const WalletProvider = ({ children }) => {
+  const [account, setAccount] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [chainId, setChainId] = useState(null);
+  
+  const connect = async () => {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+      setAccount(accounts[0]);
+      setIsConnected(true);
+    }
+  };
+  
+  return (
+    <WalletContext.Provider value={{ account, isConnected, connect }}>
+      {children}
+    </WalletContext.Provider>
+  );
+};
+```
+
+### **Theme Context**
+```javascript
+// context/ThemeContext.js
+export const ThemeProvider = ({ children }) => {
+  const [isDark, setIsDark] = useState(true);
+  
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+    document.documentElement.setAttribute('data-theme', !isDark ? 'dark' : 'light');
+  };
+  
+  return (
+    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+```
+
+## 🔧 **Development Tools**
+
+### **Available Scripts**
+```bash
+npm start          # Development server (port 5003)
+npm run build      # Production build
+npm test           # Run tests
+npm run eject      # Eject from Create React App
+```
+
+### **Webpack Configuration**
+```javascript
+// config-overrides.js - Polyfills for blockchain libraries
+const webpack = require('webpack');
+
+module.exports = function override(config) {
+  config.resolve.fallback = {
+    crypto: require.resolve('crypto-browserify'),
+    stream: require.resolve('stream-browserify'),
+    https: require.resolve('https-browserify'),
+    os: require.resolve('os-browserify/browser'),
+    url: require.resolve('url')
+  };
+  
+  config.plugins.push(
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+      Buffer: ['buffer', 'Buffer']
+    })
+  );
+  
+  return config;
+};
+```
+
+## 🐛 **Troubleshooting**
+
+### **Common Issues**
+
+#### **1. MetaMask Connection Fails**
+```bash
+# Check if MetaMask is installed
+if (!window.ethereum) {
+  alert('Please install MetaMask');
+}
+
+# Check network configuration
+const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+```
+
+#### **2. API Connection Errors**
+```bash
+# Verify backend is running
+curl http://localhost:3000/api/health
+
+# Check CORS configuration
+# Ensure backend allows frontend origin
+```
+
+#### **3. Build Errors**
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Check for polyfill issues
+npm install --save-dev react-app-rewired
+```
+
+#### **4. Styling Issues**
+```bash
+# Rebuild Tailwind CSS
+npm run build:css
+
+# Check for conflicting CSS
+# Inspect browser dev tools
+```
+
+### **Environment Debugging**
+```bash
+# Check environment variables
+echo $REACT_APP_API_URL
+echo $REACT_APP_CONTRACT_ADDRESS
+
+# Verify .env file
+cat .env | grep REACT_APP
+```
+
+## 📱 **Features**
+
+### **Responsive Design**
+- Mobile-first approach
+- Breakpoint system: sm, md, lg, xl
+- Touch-friendly interactions
+- Progressive Web App (PWA) ready
+
+### **Real-time Updates**
+- Auto-refresh consensus data every 30 seconds
+- WebSocket integration for live updates
+- Optimistic UI updates for better UX
+
+### **Accessibility**
+- ARIA labels and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- High contrast mode support
+
+### **Performance Optimizations**
+- Code splitting with React.lazy()
+- Image optimization and lazy loading
+- API response caching
+- Bundle size optimization
+
+## 🚀 **Deployment**
+
+### **Build for Production**
+```bash
+npm run build
+# Creates optimized build in build/ directory
+```
+
+### **Environment Variables for Production**
+```bash
+REACT_APP_API_URL=https://api.proofchain.com
+REACT_APP_CONTRACT_ADDRESS=0xProductionContractAddress
+REACT_APP_BLOCKCHAIN_NETWORK=mainnet
+REACT_APP_CHAIN_ID=1
+```
+
+### **Deployment Options**
+- **Netlify**: Connect GitHub repo for auto-deployment
+- **Vercel**: Zero-config deployment with Git integration
+- **AWS S3 + CloudFront**: Static hosting with CDN
+- **IPFS**: Decentralized hosting option
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/new-feature`
+3. Follow React best practices and ESLint rules
+4. Test thoroughly on different browsers
+5. Submit pull request with detailed description
+
+## 📚 **Additional Resources**
+
+- [React Documentation](https://reactjs.org/docs)
+- [Tailwind CSS Guide](https://tailwindcss.com/docs)
+- [Ethers.js Documentation](https://docs.ethers.io/)
+- [MetaMask Developer Docs](https://docs.metamask.io/)

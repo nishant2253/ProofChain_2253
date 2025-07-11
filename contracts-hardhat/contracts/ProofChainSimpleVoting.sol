@@ -126,7 +126,7 @@ contract ProofChainSimpleVoting is ReentrancyGuard, Ownable {
         if (votingDuration == 0) {
             votingDuration = defaultVotingDuration;
         }
-        require(votingDuration >= 1 hours && votingDuration <= 7 days, "Invalid voting duration");
+        require(votingDuration >= 1 minutes && votingDuration <= 7 days, "Invalid voting duration");
         
         uint256 contentId = nextContentId++;
         ContentItem storage item = contentItems[contentId];

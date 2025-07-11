@@ -45,6 +45,11 @@
 # Local environment variables
 **/.env*.local
 
+# Environment configuration files
+**/production.env
+**/examples.env
+**/.env.example
+
 # TypeScript
 **/*.tsbuildinfo
 

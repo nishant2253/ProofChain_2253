@@ -18,11 +18,11 @@ const ContentSubmitPage = () => {
     votingEndTime: ""
   });
 
-  // Helper function to set default voting period (24 hours from now)
+  // Helper function to set default voting period (2 minutes for testing)
   const setDefaultVotingPeriod = () => {
     const now = new Date();
-    const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
-    const endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000); // 24 hours after start
+    const startTime = new Date(now.getTime() + 30 * 1000); // 30 seconds from now
+    const endTime = new Date(startTime.getTime() + 2 * 60 * 1000); // 2 minutes after start
     
     setFormData(prev => ({
       ...prev,
@@ -117,16 +117,17 @@ const ContentSubmitPage = () => {
       return;
     }
 
-    // Check minimum voting duration (1 hour)
+    // Check minimum voting duration (1 minute for testing)
     const durationMs = votingEnd - votingStart;
+    const durationMinutes = durationMs / (1000 * 60);
     const durationHours = durationMs / (1000 * 60 * 60);
-    const minDurationHours = 1;
+    const minDurationMinutes = 1;
     const maxDurationDays = 7;
     
-    if (durationHours < minDurationHours) {
+    if (durationMinutes < minDurationMinutes) {
       setSubmitStatus({
         type: "error",
-        message: `Voting period must be at least ${minDurationHours} hour(s). Current duration: ${durationHours.toFixed(1)} hours.`
+        message: `Voting period must be at least ${minDurationMinutes} minute(s). Current duration: ${durationMinutes.toFixed(1)} minutes.`
       });
       return;
     }
@@ -451,7 +452,7 @@ const ContentSubmitPage = () => {
                   onClick={setDefaultVotingPeriod}
                   className="text-sm px-3 py-1 rounded border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white transition-colors"
                 >
-                  Set Default (24h)
+                  Set Default (2min)
                 </button>
               </div>
             </div>

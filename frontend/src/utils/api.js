@@ -62,6 +62,12 @@ export const getMyReputationHistory = () => api.get("/users/me/reputation-histor
 export const verifyIdentity = (merkleProof) => 
   api.post("/users/verify", { merkleProof });
 
+// User content endpoints
+export const getUserContent = (address) => api.get(`/users/${address}/content`);
+export const getMyContent = () => api.get("/users/me/content");
+export const claimContentReward = (contentId) => 
+  api.post(`/users/me/content/${contentId}/claim-reward`);
+
 // Content endpoints
 export const getContentList = (page = 1, limit = 10) =>
   api.get("/content", { params: { page, limit } });

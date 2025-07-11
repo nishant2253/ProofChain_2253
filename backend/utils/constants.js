@@ -22,7 +22,7 @@ const VOTE_OPTIONS = {
 };
 
 // Constants from the smart contract
-const MIN_VOTING_PERIOD = 24 * 60 * 60; // 24 hours in seconds
+const MIN_VOTING_PERIOD = 60; // 1 minute in seconds (SimpleVoting contract)
 const MIN_STAKE_DURATION = 48 * 60 * 60; // 48 hours in seconds
 const MAX_QUADRATIC_VOTES_USD = 10000;
 const CONFIDENCE_THRESHOLD = 60;

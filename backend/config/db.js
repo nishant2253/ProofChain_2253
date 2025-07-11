@@ -73,21 +73,23 @@ async function seedInitialData() {
 
     console.log("Seeding initial data...");
 
-    // Create a test content item
+    // Create a test content item for unified contract
     const now = new Date();
+    const votingDeadline = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now for testing
     const testContent = new ContentItem({
       contentId: 36731,
       ipfsHash:
         "Qm91e44adza7d852fb2e4c57c4399953fb864e318bf330421249a43361c8855e",
       submissionTime: now,
-      commitDeadline: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 1 day from now
-      revealDeadline: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-      title: "Test Content",
-      description: "This is a test content item for development",
+      votingStartTime: now,
+      votingEndTime: votingDeadline,
+      votingDeadline: votingDeadline, // For unified contract compatibility
+      title: "Test Content - Simple Voting",
+      description: "This is a test content item for the unified voting system",
       contentType: "image",
       contentUrl: "https://example.com/image.jpg",
       creator: "0xf17cf1e4f18bbe29bdebe37eb3e9aa4c0437a3e5",
-      tags: ["test", "development"],
+      tags: ["test", "development", "simple-voting"],
     });
 
     await testContent.save();

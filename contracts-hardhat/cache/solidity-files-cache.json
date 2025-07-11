@@ -416,8 +416,8 @@
       ]
     },
     "/home/nishant/proofchain/contracts-hardhat/contracts/ProofChainSimpleVoting.sol": {
-      "lastModificationDate": 1751860752243,
-      "contentHash": "4438f7d71a65cd52e6904300086b5c4b",
+      "lastModificationDate": 1752176673370,
+      "contentHash": "bb4ea5d7449f6a238b916756d16214f7",
       "sourceName": "contracts/ProofChainSimpleVoting.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -455,6 +455,48 @@
       "artifacts": [
         "IERC20",
         "ProofChainSimpleVoting"
+      ]
+    },
+    "/home/nishant/proofchain/contracts-hardhat/contracts/ProofChainVoting.sol": {
+      "lastModificationDate": 1752261198112,
+      "contentHash": "34fc0ef99ecd92aa04195acae83cf9c8",
+      "sourceName": "contracts/ProofChainVoting.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/security/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "AggregatorV3Interface",
+        "IERC20",
+        "ProofChainVoting"
       ]
     }
   }

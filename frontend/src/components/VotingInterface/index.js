@@ -33,7 +33,7 @@ const VotingInterface = ({ content, onVoteComplete }) => {
     vote: "",
     confidence: 5, // Default confidence (1-10)
     tokenType: "0", // Default token type (ETH)
-    stakeAmount: "0.01", // Default stake amount
+    stakeAmount: "0.1", // Default stake amount (increased for contract requirements)
   });
 
   // Reveal phase state
@@ -232,13 +232,23 @@ const VotingInterface = ({ content, onVoteComplete }) => {
 
       // Interact with smart contract
       const contract = getContract(signer);
+      
+      console.log("Attempting to submit vote with:", {
+        contentId: content.contentId,
+        vote,
+        confidence,
+        tokenType,
+        stakeAmountWei: stakeAmountWei.toString(),
+        merkleProof
+      });
 
       let tx;
       if (tokenType === 1) {
         // ETH token type
-        tx = await contract.commitMultiTokenVote(
+        tx = await contract.submitVote(
           content.contentId,
-          commitHash,
+          vote,
+          confidence,
           tokenType,
           stakeAmountWei,
           merkleProof,
@@ -247,9 +257,10 @@ const VotingInterface = ({ content, onVoteComplete }) => {
       } else {
         // Other ERC-20 tokens (requires prior approval)
         // For now, we'll assume approval is handled or not needed for mock tokens
-        tx = await contract.commitMultiTokenVote(
+        tx = await contract.submitVote(
           content.contentId,
-          commitHash,
+          vote,
+          confidence,
           tokenType,
           stakeAmountWei,
           merkleProof
@@ -271,8 +282,8 @@ const VotingInterface = ({ content, onVoteComplete }) => {
         transactionHash, // Send the actual transaction hash
       };
 
-      // Submit commit vote to backend
-      await submitVote(content._id, { ...commitData, type: "commit" });
+      // Submit vote to backend (simple voting, no commit)
+      await submitVote(content._id, { ...commitData, type: "vote" });
 
       setSuccess(
         `Vote committed successfully! Transaction: ${transactionHash.substring(0, 10)}... Save your salt for the reveal phase: ${salt}`
@@ -578,8 +589,8 @@ const VotingInterface = ({ content, onVoteComplete }) => {
               name="stakeAmount"
               value={commitForm.stakeAmount}
               onChange={handleCommitChange}
-              step="0.001"
-              min="0.001"
+              step="0.01"
+              min="0.1"
               className="input-field"
               required
             />

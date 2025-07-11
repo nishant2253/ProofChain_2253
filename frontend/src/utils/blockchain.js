@@ -1,17 +1,17 @@
 import { ethers } from "ethers";
 
-// ABI for the ProofChainSimpleVoting contract
-// Updated for simple voting system with token staking
+// ABI for the unified ProofChainVoting contract
 const CONTRACT_ABI = [
-  "function submitContent(string calldata ipfsHash, uint256 votingDuration) external returns (uint256 contentId)",
-  "function submitVote(uint256 contentId, uint8 vote, uint8 tokenType, uint256 stakeAmount, uint256 confidence) external payable",
+  "function submitContent(string calldata ipfsHash, uint256 votingDuration) external returns (uint256)",
+  "function submitVote(uint256 contentId, uint8 vote, uint8 confidence, uint8 tokenType, uint256 stakeAmount, bytes32[] calldata merkleProof) external payable",
+  "function finalizeVoting(uint256 contentId) external",
+  "function getContentInfo(uint256 contentId) external view returns (string memory ipfsHash, uint256 submissionTime, uint256 votingDeadline, bool isActive, bool isFinalized, uint256[] memory voteDistribution, uint256 participantCount, uint256 totalUSDValue, uint8 winningOption)",
+  "function getUserVote(uint256 contentId, address user) external view returns (bool hasVoted, uint8 vote, uint8 confidence, uint8 tokenType, uint256 stakeAmount, uint256 votingWeight, uint256 timestamp)",
   "function getTokenPriceUSD(uint8 tokenType) public view returns (uint256)",
-  "function convertToUSD(uint8 tokenType, uint256 tokenAmount) public view returns (uint256)",
-  "function calculateQuadraticWeightUSD(uint256 usdValue) public pure returns (uint256)",
-  "function isVerifiedIdentity(address user, bytes32[] calldata merkleProof) public view returns (bool)",
-  "event ContentSubmitted(uint256 indexed contentId, string ipfsHash, uint256 votingStartTime, uint256 votingEndTime)",
-  "event VoteSubmitted(uint256 indexed contentId, address indexed voter, uint8 vote, uint8 tokenType, uint256 stakeAmount, uint256 usdValue, uint256 confidence)",
-  "event VotingFinalized(uint256 indexed contentId, uint8 winningOption, uint256 totalParticipants, uint256 totalUSDStaked)",
+  "function calculateVotingWeight(uint256 usdValue, uint8 confidence, uint256 bonusMultiplier) public pure returns (uint256)",
+  "event ContentSubmitted(uint256 indexed contentId, string ipfsHash, uint256 votingDeadline, address indexed creator)",
+  "event VoteSubmitted(uint256 indexed contentId, address indexed voter, uint8 vote, uint8 confidence, uint8 tokenType, uint256 stakeAmount, uint256 votingWeight)",
+  "event VotingFinalized(uint256 indexed contentId, uint8 winningOption, uint256 totalParticipants, uint256 totalUSDValue)",
 ];
 
 // Get contract address from environment variables
@@ -55,9 +55,9 @@ export const submitVoteToBlockchain = async (signer, contentId, vote, tokenType,
     console.log("Submitting vote to blockchain:", {
       contentId,
       vote,
+      confidence,
       tokenType,
       stakeAmount,
-      confidence,
       contractAddress: contract.address
     });
 
@@ -70,6 +70,9 @@ export const submitVoteToBlockchain = async (signer, contentId, vote, tokenType,
       stakeAmountWei = ethers.utils.parseUnits(stakeAmount.toString(), 18);
     }
 
+    // Empty merkle proof for now (identity verification can be added later)
+    const merkleProof = [];
+
     // For ETH, we need to send value with the transaction
     const txOptions = {};
     if (tokenType === 1) { // ETH
@@ -79,9 +82,10 @@ export const submitVoteToBlockchain = async (signer, contentId, vote, tokenType,
     const tx = await contract.submitVote(
       contentId,
       vote,
+      confidence,
       tokenType,
       stakeAmountWei,
-      confidence,
+      merkleProof,
       txOptions
     );
     

@@ -8,6 +8,7 @@ import {
   parseErrorMessage,
 } from "../utils/helpers";
 import VotingInterface from "../components/VotingInterface";
+import VotingResults from "../components/VotingResults";
 
 const ContentDetailPage = () => {
   const { id } = useParams();
@@ -15,12 +16,25 @@ const ContentDetailPage = () => {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showResults, setShowResults] = useState(false);
 
   const fetchContentDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getContentById(id);
-      setContent(data);
+      const response = await getContentById(id);
+      
+      // Handle both direct content and wrapped response
+      const contentData = response.data || response;
+      
+      console.log('📊 Content fetched:', {
+        id: contentData.contentId || contentData._id,
+        title: contentData.title,
+        status: contentData.status,
+        votingEndTime: contentData.votingEndTime,
+        isFinalized: contentData.isFinalized
+      });
+      
+      setContent(contentData);
       setError(null);
     } catch (err) {
       console.error("Error fetching content details:", err);
@@ -84,18 +98,28 @@ const ContentDetailPage = () => {
 
   // Determine voting phase
   const votingPhase = getVotingPhase(content);
+  
+  // Debug voting phase detection
+  console.log('🔍 Voting Phase Debug:', {
+    contentId: content.contentId || content._id,
+    status: content.status,
+    votingEndTime: content.votingEndTime,
+    isFinalized: content.isFinalized,
+    detectedPhase: votingPhase,
+    shouldShowResults: votingPhase === "expired" || votingPhase === "finalized"
+  });
 
   // Format voting phase for display
   const formatVotingPhase = (phase) => {
     switch (phase) {
-      case "commit":
-        return "Commit Phase";
-      case "reveal":
-        return "Reveal Phase";
-      case "pending":
-        return "Pending Finalization";
+      case "live":
+        return "Live Voting";
+      case "expired":
+        return "Voting Expired";
       case "finalized":
         return "Finalized";
+      case "pending":
+        return "Pending";
       default:
         return "Unknown";
     }
@@ -124,9 +148,8 @@ const ContentDetailPage = () => {
           <span
             className={`
             px-2 py-1 text-xs font-medium rounded-full
-            ${votingPhase === "commit" ? "bg-blue-100 text-blue-800" : ""}
-            ${votingPhase === "reveal" ? "bg-purple-100 text-purple-800" : ""}
-            ${votingPhase === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
+            ${votingPhase === "live" ? "bg-blue-100 text-blue-800" : ""}
+            ${votingPhase === "expired" ? "bg-yellow-100 text-yellow-800" : ""}
             ${votingPhase === "finalized" ? "bg-green-100 text-green-800" : ""}
           `}
           >
@@ -189,20 +212,24 @@ const ContentDetailPage = () => {
               <h3 className="text-lg font-medium mb-2">Voting Information</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Commit Phase Deadline:</span>
-                  <span>{formatDate(content.commitDeadline)}</span>
+                  <span className="text-gray-700">Voting Start:</span>
+                  <span>{formatDate(content.votingStartTime)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Reveal Phase Deadline:</span>
-                  <span>{formatDate(content.revealDeadline)}</span>
+                  <span className="text-gray-700">Voting End:</span>
+                  <span>{formatDate(content.votingEndTime || content.votingDeadline)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Commit Count:</span>
-                  <span>{content.commitCount || 0}</span>
+                  <span className="text-gray-700">Total Votes:</span>
+                  <span>{content.votes?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Reveal Count:</span>
-                  <span>{content.revealCount || 0}</span>
+                  <span className="text-gray-700">Upvotes:</span>
+                  <span>{content.upvotes || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Downvotes:</span>
+                  <span>{content.downvotes || 0}</span>
                 </div>
               </div>
             </div>
@@ -236,54 +263,6 @@ const ContentDetailPage = () => {
                   <span className="text-gray-700">Total USD Value Staked:</span>
                   <span>${content.blockchainResults.totalUSDValue}</span>
                 </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-2">
-                    Vote Distribution
-                  </h3>
-                  <div className="h-8 bg-gray-200 rounded-full overflow-hidden">
-                    {content.blockchainResults.voteDistribution && (
-                      <>
-                        <div
-                          className="h-full bg-green-500"
-                          style={{
-                            width: `${
-                              (content.blockchainResults.voteDistribution[1] /
-                                (content.blockchainResults.voteDistribution[0] +
-                                  content.blockchainResults
-                                    .voteDistribution[1])) *
-                              100
-                            }%`,
-                            float: "left",
-                          }}
-                        ></div>
-                        <div
-                          className="h-full bg-red-500"
-                          style={{
-                            width: `${
-                              (content.blockchainResults.voteDistribution[0] /
-                                (content.blockchainResults.voteDistribution[0] +
-                                  content.blockchainResults
-                                    .voteDistribution[1])) *
-                              100
-                            }%`,
-                            float: "left",
-                          }}
-                        ></div>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex justify-between mt-1 text-sm">
-                    <span>
-                      Approve:{" "}
-                      {content.blockchainResults.voteDistribution?.[1] || 0}
-                    </span>
-                    <span>
-                      Reject:{" "}
-                      {content.blockchainResults.voteDistribution?.[0] || 0}
-                    </span>
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}
@@ -295,8 +274,32 @@ const ContentDetailPage = () => {
             content={content}
             onVoteComplete={handleVoteComplete}
           />
+          
+          {/* Results Button - Show when voting has expired */}
+          {(votingPhase === "expired" || votingPhase === "finalized") && (
+            <div className="mt-6">
+              <button
+                onClick={() => setShowResults(true)}
+                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
+              >
+                <span className="mr-2">📊</span>
+                View Voting Results
+              </button>
+              <p className="text-center text-gray-600 text-sm mt-2">
+                Voting has ended. Click to see the final verdict based on quadratic voting.
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Voting Results Modal */}
+      {showResults && (
+        <VotingResults
+          contentId={content?.contentId || content?._id}
+          onClose={() => setShowResults(false)}
+        />
+      )}
     </div>
   );
 };

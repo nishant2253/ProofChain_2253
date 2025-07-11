@@ -6,11 +6,11 @@ async function main() {
   // Default merkle root for the contract deployment
   const merkleRoot = process.env.MERKLE_ROOT;
 
-  console.log("Deploying ProofChainMultiTokenVoting contract...");
+  console.log("Deploying ProofChainVoting contract...");
   console.log(`Using merkle root: ${merkleRoot}`);
 
   const ProofChain = await hre.ethers.getContractFactory(
-    "ProofChainMultiTokenVoting"
+    "ProofChainVoting"
   );
   const proofChain = await ProofChain.deploy(merkleRoot);
 
@@ -20,7 +20,7 @@ async function main() {
   // Get the contract address
   const proofChainAddress = await proofChain.getAddress();
 
-  console.log(`ProofChainMultiTokenVoting deployed to: ${proofChainAddress}`);
+  console.log(`ProofChainVoting deployed to: ${proofChainAddress}`);
   console.log("Contract deployment completed successfully!");
 
   // Log deployment information for verification

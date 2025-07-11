@@ -3,7 +3,7 @@ const hre = require("hardhat");
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const proofChainContractAddress = process.env.PROOFCHAIN_CONTRACT_ADDRESS;
-  const proofChain = await hre.ethers.getContractAt("ProofChainMultiTokenVoting", proofChainContractAddress, deployer);
+  const proofChain = await hre.ethers.getContractAt("ProofChainVoting", proofChainContractAddress, deployer);
 
   const fil_price_oracle_address = process.env.MOCK_AGGREGATOR_ADDRESS; // Use same mock aggregator
   
@@ -23,7 +23,7 @@ async function main() {
   
   console.log(`Using placeholder address for FIL: ${fil_token_address}`);
   
-  const tx = await proofChain.addOrUpdateToken(
+  const tx = await proofChain.addToken(
     FIL_TOKEN_TYPE,
     fil_token_address, // Use placeholder address instead of ZeroAddress
     fil_price_oracle_address,

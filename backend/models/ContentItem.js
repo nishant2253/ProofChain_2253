@@ -26,7 +26,12 @@ const contentItemSchema = new mongoose.Schema(
     },
     votingEndTime: {
       type: Date,
-      required: true,
+      required: false, // Make optional for unified contract compatibility
+    },
+    // Add support for unified contract's single votingDeadline
+    votingDeadline: {
+      type: Date,
+      required: false,
     },
     // Map to totalStakedByToken in the contract
     totalStakedByToken: {
@@ -137,6 +142,19 @@ const contentItemSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Reward tracking fields
+    hasClaimedReward: {
+      type: Boolean,
+      default: false,
+    },
+    claimedAt: {
+      type: Date,
+      default: null,
+    },
+    claimedReward: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -159,6 +177,15 @@ contentItemSchema.virtual("status").get(function () {
       return "pending"; // Treat as pending until migrated
     } else if (now < this.revealDeadline) {
       return "live"; // Treat as live voting period
+    } else {
+      return "expired";
+    }
+  }
+  
+  // Handle new unified contract format with single votingDeadline
+  if (this.votingDeadline && !this.votingStartTime && !this.votingEndTime) {
+    if (now <= this.votingDeadline) {
+      return "live";
     } else {
       return "expired";
     }

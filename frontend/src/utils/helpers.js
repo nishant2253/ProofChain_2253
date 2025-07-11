@@ -135,23 +135,64 @@ export const formatTimeRemaining = (timeRemaining) => {
 /**
  * Determine the voting phase based on content data
  * @param {Object} content - Content item data
- * @returns {string} Voting phase ('commit', 'reveal', 'finalized', or 'pending')
+ * @returns {string} Voting phase ('live', 'expired', 'finalized', or 'pending')
  */
 export const getVotingPhase = (content) => {
-  const now = new Date().getTime();
-  const commitDeadline = new Date(content.commitDeadline).getTime();
-  const revealDeadline = new Date(content.revealDeadline).getTime();
+  if (!content) return "pending";
 
-  if (content.finalized) {
+  // Check if explicitly finalized
+  if (content.finalized || content.isFinalized || content.status === 'finalized') {
     return "finalized";
   }
 
-  if (now < commitDeadline) {
-    return "commit";
+  // Check explicit status first
+  if (content.status === 'expired') {
+    return "expired";
   }
 
-  if (now < revealDeadline) {
-    return "reveal";
+  if (content.status === 'live' || content.status === 'active') {
+    return "live";
+  }
+
+  // Check voting deadlines
+  const now = new Date().getTime();
+  
+  // Try different deadline field names (supporting both old and new systems)
+  const votingEndTime = content.votingEndTime || content.votingDeadline || content.revealDeadline;
+  const votingStartTime = content.votingStartTime || content.commitStartTime;
+  
+  if (votingEndTime) {
+    const endTime = new Date(votingEndTime).getTime();
+    
+    if (now > endTime) {
+      return "expired";
+    }
+    
+    if (votingStartTime) {
+      const startTime = new Date(votingStartTime).getTime();
+      if (now >= startTime && now <= endTime) {
+        return "live";
+      }
+    } else {
+      // If no start time, assume voting is live if not expired
+      return "live";
+    }
+  }
+
+  // Legacy commit-reveal system support
+  if (content.commitDeadline && content.revealDeadline) {
+    const commitDeadline = new Date(content.commitDeadline).getTime();
+    const revealDeadline = new Date(content.revealDeadline).getTime();
+
+    if (now < commitDeadline) {
+      return "live"; // Map commit phase to live
+    }
+
+    if (now < revealDeadline) {
+      return "live"; // Map reveal phase to live
+    }
+
+    return "expired"; // Past reveal deadline
   }
 
   return "pending";

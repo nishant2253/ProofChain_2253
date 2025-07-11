@@ -90,7 +90,11 @@ const getContent = asyncHandler(async (req, res) => {
     throw new Error("Content not found");
   }
 
-  res.json(content);
+  // Return wrapped response format for consistency
+  res.json({
+    success: true,
+    data: content
+  });
 });
 
 /**

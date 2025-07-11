@@ -3,7 +3,7 @@ const hre = require("hardhat");
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const proofChainContractAddress = process.env.PROOFCHAIN_CONTRACT_ADDRESS;
-  const proofChain = await hre.ethers.getContractAt("ProofChainMultiTokenVoting", proofChainContractAddress, deployer);
+  const proofChain = await hre.ethers.getContractAt("ProofChainVoting", proofChainContractAddress, deployer);
 
   const usdfc_token_address = process.env.USDFC_TOKEN_ADDRESS;
   const usdfc_price_oracle_address = process.env.USDFC_PRICE_ORACLE_ADDRESS;
@@ -18,7 +18,7 @@ async function main() {
   console.log(`USDFC Token Address: ${usdfc_token_address}`);
   console.log(`USDFC Price Oracle: ${usdfc_price_oracle_address}`);
   
-  const tx = await proofChain.addOrUpdateToken(
+  const tx = await proofChain.addToken(
     USDFC_TOKEN_TYPE,
     usdfc_token_address,
     usdfc_price_oracle_address,

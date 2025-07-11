@@ -96,8 +96,13 @@ const submitSimpleVote = async (req, res) => {
     // Find the content item by contentId (numeric) first, then try _id if it's a valid ObjectId
     let content;
     
+    // Convert contentId to number if it's a string number
+    const numericContentId = parseInt(contentId);
+    
     // First try to find by contentId (numeric field)
-    content = await ContentItem.findOne({ contentId: contentId });
+    if (!isNaN(numericContentId)) {
+      content = await ContentItem.findOne({ contentId: numericContentId });
+    }
     
     // If not found and contentId looks like an ObjectId, try finding by _id
     if (!content && typeof contentId === 'string' && contentId.match(/^[0-9a-fA-F]{24}$/)) {

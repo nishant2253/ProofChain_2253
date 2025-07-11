@@ -94,7 +94,7 @@ const schemas = {
       Joi.string().isoDate()
     ).optional(),
     // Legacy field for backward compatibility
-    votingDuration: Joi.number().integer().min(3600).optional(), // Minimum 1 hour
+    votingDuration: Joi.number().integer().min(60).optional(), // Minimum 1 minute
     tags: Joi.string().optional(),
     category: Joi.string().optional(),
     language: Joi.string().optional(),

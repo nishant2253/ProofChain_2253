@@ -106,11 +106,7 @@ const App = () => {
                 <Profile />
               </ProtectedRoute>
             } />
-            <Route path="/profile/:address" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
+            <Route path="/profile/:address" element={<Profile />} />
             <Route path="/test" element={<TestHomePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

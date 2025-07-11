@@ -1,4 +1,5 @@
 const { ContentItem, CommitInfo, RevealInfo } = require("../models");
+const { updateSingleContentStatus } = require("./statusUpdateService");
 const {
   uploadToIPFS,
   uploadMetadataToIPFS,
@@ -75,12 +76,12 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
     const votingEndTime = contentData.votingEndTime || (Date.now() + MIN_VOTING_PERIOD * 1000);
     const votingDuration = Math.floor((votingEndTime - votingStartTime) / 1000);
     
-    // Ensure minimum duration of 1 hour (3600 seconds)
-    const minDuration = 3600; // 1 hour
+    // Ensure minimum duration matches contract requirement
+    const minDuration = 60; // 1 minute (SimpleVoting contract)
     const maxDuration = 7 * 24 * 3600; // 7 days
     
     if (votingDuration < minDuration) {
-      throw new Error(`Voting period must be at least 1 hour. Current duration: ${Math.floor(votingDuration / 60)} minutes. Please set a longer voting period.`);
+      throw new Error(`Voting period must be at least 1 minute. Current duration: ${Math.floor(votingDuration / 60)} minutes. Please set a longer voting period.`);
     }
     
     if (votingDuration > maxDuration) {
@@ -91,7 +92,7 @@ const createContent = async (contentData, fileBuffer, fileName, signer) => {
       votingStartTime: new Date(votingStartTime).toISOString(),
       votingEndTime: new Date(votingEndTime).toISOString(),
       votingDuration: `${votingDuration} seconds (${Math.floor(votingDuration / 3600)} hours)`,
-      minRequired: `${minDuration} seconds (1 hour)`,
+      minRequired: `${minDuration} seconds (1 minute)`,
       maxAllowed: `${maxDuration} seconds (7 days)`
     });
 
@@ -150,10 +151,16 @@ const getContentById = async (contentId) => {
     }
 
     // Find content in database
-    const content = await ContentItem.findOne({ contentId });
+    let content = await ContentItem.findOne({ contentId });
 
     if (!content) {
       return null;
+    }
+
+    // Update content status if needed (check if voting has expired)
+    const updatedContent = await updateSingleContentStatus(content.contentId || content._id);
+    if (updatedContent) {
+      content = updatedContent;
     }
 
     // Get metadata from IPFS

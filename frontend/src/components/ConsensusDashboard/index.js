@@ -322,7 +322,7 @@ const ConsensusDashboard = () => {
 
       // Step 2: Submit vote to backend API with blockchain transaction details
       const voteSubmission = {
-        contentId: selectedContent.contentId || selectedContent._id,
+        contentId: selectedContent.contentId || parseInt(selectedContent._id) || selectedContent._id,
         vote: parseInt(voteData.vote),
         tokenType: parseInt(voteData.tokenType),
         stakeAmount: voteData.stakeAmount,

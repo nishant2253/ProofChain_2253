@@ -3,7 +3,7 @@ const hre = require("hardhat");
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
   const proofChainContractAddress = process.env.PROOFCHAIN_CONTRACT_ADDRESS;
-  const proofChain = await hre.ethers.getContractAt("ProofChainMultiTokenVoting", proofChainContractAddress, deployer);
+  const proofChain = await hre.ethers.getContractAt("ProofChainVoting", proofChainContractAddress, deployer);
 
   const ethPriceOracleAddress = process.env.MOCK_AGGREGATOR_ADDRESS;
 
@@ -14,12 +14,11 @@ async function main() {
   const ETH_MIN_STAKE_AMOUNT = hre.ethers.parseUnits("0.01", ETH_DECIMALS); // 0.01 ETH
 
   console.log("Activating ETH token...");
-  const tx = await proofChain.addOrUpdateToken(
+  const tx = await proofChain.addToken(
     ETH_TOKEN_TYPE,
     "0x0000000000000000000000000000000000000000", // ETH token address (zero address for native ETH)
     ethPriceOracleAddress,
     ETH_DECIMALS,
-    true, // isActive
     ETH_BONUS_MULTIPLIER,
     ETH_MIN_STAKE_AMOUNT
   );
