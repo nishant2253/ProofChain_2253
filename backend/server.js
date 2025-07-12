@@ -75,15 +75,8 @@ app.get("/health", (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, async () => {
-  console.log(
-    `Server running in ${
-      process.env.NODE_ENV || "development"
-    } mode on port ${PORT}`
-  );
-
+// Initialize services for serverless environment
+const initializeServices = async () => {
   // Only initialize blockchain services if not disabled
   if (process.env.DISABLE_BLOCKCHAIN !== "true") {
     // Initialize blockchain event listeners
@@ -104,7 +97,10 @@ const server = app.listen(PORT, async () => {
   } else {
     console.log("Blockchain services disabled");
   }
-});
+};
+
+// Initialize services on startup
+initializeServices().catch(console.error);
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
@@ -112,4 +108,18 @@ process.on("unhandledRejection", (err) => {
   // Don't crash the server, just log the error
 });
 
-module.exports = { app, server }; // Export for testing
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  const server = app.listen(PORT, () => {
+    console.log(
+      `Server running in ${
+        process.env.NODE_ENV || "development"
+      } mode on port ${PORT}`
+    );
+  });
+  module.exports = { app, server }; // Export for testing
+} else {
+  // For Vercel serverless deployment
+  module.exports = app;
+}
