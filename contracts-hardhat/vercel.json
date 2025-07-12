@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "name": "proofchain-contracts",
+  "builds": [
+    {
+      "src": "artifacts/**/*.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "contracts/**/*.sol",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/artifacts/(.*)",
+      "dest": "/artifacts/$1"
+    },
+    {
+      "src": "/contracts/(.*)",
+      "dest": "/contracts/$1"
+    },
+    {
+      "src": "/abi/(.*)",
+      "dest": "/artifacts/contracts/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/artifacts/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
+  "functions": {},
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
