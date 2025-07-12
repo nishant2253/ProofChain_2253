@@ -817,24 +817,20 @@ npx hardhat run scripts/activateUSDFCToken.js --network filecoin_calibration
 }
 ```
 
-##### **2. Frontend Static Hosting Configuration (`frontend/vercel.json`)**
+##### **2. Frontend Static Hosting Configuration (`frontend/vercel.json`) - UPDATED**
 ```json
 {
   "version": 2,
   "name": "proofchain-frontend",
   "buildCommand": "npm run build",
   "outputDirectory": "build",
+  "devCommand": "npm start",
+  "installCommand": "npm install",
   "framework": "create-react-app",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
@@ -843,6 +839,12 @@ npx hardhat run scripts/activateUSDFCToken.js --network filecoin_calibration
   }
 }
 ```
+
+**Key Changes Made:**
+- **Removed `functions` property** - Not needed for React static site
+- **Changed `routes` to `rewrites`** - Proper SPA routing configuration
+- **Simplified configuration** - Let Vercel handle static file optimization automatically
+- **Fixed runtime error** - Eliminated function runtime conflicts
 
 ##### **3. Contract Artifacts Hosting (`contracts-hardhat/vercel.json`)**
 ```json
@@ -882,6 +884,46 @@ npx hardhat run scripts/activateUSDFCToken.js --network filecoin_calibration
 - **Environment variables** configuration
 - **Troubleshooting** common issues
 - **Security best practices**
+
+##### **5. Root Monorepo Configuration (`vercel.json`) - NEW**
+```json
+{
+  "version": 2,
+  "name": "proofchain-monorepo",
+  "builds": [
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+```
+
+**Purpose**: Alternative deployment strategy for single Vercel project containing both backend and frontend
 
 #### **🔧 Critical Server.js Modifications for Serverless:**
 
@@ -942,6 +984,33 @@ if (process.env.NODE_ENV !== "production") {
 **Error**: `The default export must be a function or server`
 **Cause**: Server.js trying to listen on port in serverless environment
 **Fix**: Conditional export logic for serverless vs local development
+
+##### **Issue #4: Frontend Function Runtime Error - RESOLVED**
+**Error**: `Function Runtimes must have a valid version, for example 'now-php@1.0.0'`
+**Cause**: Frontend vercel.json contained unnecessary `functions` configuration
+**Fix**: Removed functions property and simplified configuration for static site
+```json
+// Before (caused error):
+"functions": {
+  "app/api/**/*.js": {
+    "runtime": "nodejs18.x"
+  }
+}
+
+// After (fixed):
+"rewrites": [
+  {
+    "source": "/(.*)",
+    "destination": "/index.html"
+  }
+]
+```
+
+##### **Issue #5: Multiple Deployment Conflicts - ADDRESSED**
+**Problem**: Multiple vercel.json files causing deployment confusion
+**Solution**: Created deployment strategy options:
+1. **Separate deployments** (recommended) - backend and frontend as separate Vercel projects
+2. **Monorepo deployment** - single project with root vercel.json
 
 #### **🔗 MongoDB Atlas Integration:**
 
@@ -1049,17 +1118,34 @@ CI=false
 
 #### **📊 Deployment Process:**
 
-##### **Step-by-Step Implementation:**
+##### **Step-by-Step Implementation (Updated):**
+
+**Option 1: Separate Deployments (Recommended)**
 1. **Prepare Configuration Files** - Create all vercel.json files
-2. **Deploy Backend on Vercel** - Get backend URL
+2. **Deploy Backend on Vercel** - Set root directory to `backend`, get backend URL
 3. **Configure Backend Environment** - Set all required variables
-4. **Deploy Frontend on Vercel** - Get frontend URL
+4. **Deploy Frontend on Vercel** - Set root directory to `frontend`, get frontend URL
 5. **Update Backend CORS** - Add frontend URL to CORS_ORIGIN
 6. **Redeploy Backend** - Apply CORS changes
 7. **Test API Connectivity** - Verify frontend can call backend
 8. **Deploy Smart Contracts** - Blockchain deployment (separate)
 9. **Update Contract Addresses** - Add to environment variables
 10. **Final End-to-End Testing** - Complete functionality verification
+
+**Option 2: Monorepo Deployment (Alternative)**
+1. **Use Root vercel.json** - Deploy entire repository as single project
+2. **Configure Environment Variables** - Set for both backend and frontend
+3. **Deploy Single Project** - Handles both backend and frontend
+4. **Test Integration** - Verify internal routing works
+5. **Deploy Smart Contracts** - Blockchain deployment (separate)
+6. **Update Contract Addresses** - Add to environment variables
+7. **Final Testing** - End-to-end functionality verification
+
+**Deployment Troubleshooting:**
+- **Multiple Deployments**: Clean up failed deployments in Vercel dashboard
+- **Root Directory Setting**: Critical for separate deployments
+- **Build Logs Analysis**: Check specific error messages for debugging
+- **Environment Variables**: Ensure all required variables are set correctly
 
 #### **🔒 Security Considerations:**
 

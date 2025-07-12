@@ -418,24 +418,20 @@ mongod --dbpath /path/to/your/db
 }
 ```
 
-#### **Frontend Vercel Configuration:**
+#### **Frontend Vercel Configuration (Fixed):**
 ```json
 {
   "version": 2,
   "name": "proofchain-frontend",
   "buildCommand": "npm run build",
   "outputDirectory": "build",
+  "devCommand": "npm start",
+  "installCommand": "npm install",
   "framework": "create-react-app",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
@@ -444,6 +440,14 @@ mongod --dbpath /path/to/your/db
   }
 }
 ```
+
+#### **Frontend Deployment Error Fixed:**
+**Error**: `Function Runtimes must have a valid version, for example 'now-php@1.0.0'`
+**Cause**: Frontend vercel.json had unnecessary `functions` property
+**Solution**: 
+- Removed `functions` configuration (not needed for React static site)
+- Simplified routing to `rewrites` for SPA behavior
+- Removed complex static file headers (let Vercel handle automatically)
 
 #### **Server.js Serverless Compatibility - CRITICAL FIX:**
 **Problem**: Vercel serverless functions require app export, not server listening
@@ -465,6 +469,8 @@ if (process.env.NODE_ENV !== "production") {
 2. **Functions/Builds Conflict**: Removed conflicting `functions` property
 3. **Invalid Export Error**: Fixed server.js export for serverless compatibility
 4. **CORS Configuration**: Added frontend URL requirement for backend
+5. **Frontend Function Runtime Error**: Removed unnecessary functions config from frontend
+6. **Multiple Deployment Conflicts**: Created separate deployment strategy
 
 #### **MongoDB Atlas Integration Guide:**
 **Complete Step-by-Step Process Added:**
@@ -508,13 +514,31 @@ GENERATE_SOURCEMAP=false
 CI=false
 ```
 
-#### **Deployment Process:**
-1. **Deploy Backend** → Get backend URL
-2. **Deploy Frontend** → Get frontend URL
+#### **Deployment Process (Updated Strategy):**
+
+##### **Recommended: Separate Deployments**
+1. **Deploy Backend** (separate Vercel project):
+   - Root Directory: `backend`
+   - Framework: Other
+   - Get backend URL
+2. **Deploy Frontend** (separate Vercel project):
+   - Root Directory: `frontend` 
+   - Framework: Create React App
+   - Get frontend URL
 3. **⚠️ CRITICAL**: Update backend `CORS_ORIGIN` with frontend URL
 4. **Redeploy backend** for CORS changes to take effect
 5. **Deploy smart contracts** to blockchain (separate process)
 6. **Update contract addresses** in environment variables
+
+##### **Alternative: Monorepo Deployment**
+- Created root `vercel.json` for single deployment
+- Handles both backend and frontend together
+- More complex but single project management
+
+##### **Deployment Status Handling:**
+- Multiple deployments may create conflicts
+- Clean up failed deployments in Vercel dashboard
+- Use separate projects for better organization
 
 #### **CORS Configuration - CRITICAL REQUIREMENT:**
 **Why Frontend URL is Required in Backend:**
