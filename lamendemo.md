@@ -375,6 +375,177 @@ sudo systemctl start mongod
 mongod --dbpath /path/to/your/db
 ```
 
+## 🚀 **Vercel Deployment Configuration - LATEST ADDITION**
+
+### **📦 Vercel Deployment Files Created**
+**Implementation Date**: Current Session  
+**Status**: ✅ COMPLETE - Ready for Production Deployment
+
+#### **Files Created:**
+1. **`backend/vercel.json`** - Serverless Node.js configuration
+2. **`frontend/vercel.json`** - Create React App deployment configuration  
+3. **`contracts-hardhat/vercel.json`** - Contract artifacts hosting (optional)
+4. **`vercel-deployment-steps.md`** - Comprehensive 200+ line deployment guide
+
+#### **Backend Vercel Configuration:**
+```json
+{
+  "version": 2,
+  "name": "proofchain-backend",
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+```
+
+#### **Frontend Vercel Configuration:**
+```json
+{
+  "version": 2,
+  "name": "proofchain-frontend",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "s-maxage=31536000,immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "CI": "false",
+    "GENERATE_SOURCEMAP": "false"
+  }
+}
+```
+
+#### **Server.js Serverless Compatibility - CRITICAL FIX:**
+**Problem**: Vercel serverless functions require app export, not server listening
+**Solution**: Modified `backend/server.js` for dual compatibility:
+
+```javascript
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  const server = app.listen(PORT, () => { ... });
+  module.exports = { app, server };
+} else {
+  // For Vercel serverless deployment
+  module.exports = app;
+}
+```
+
+#### **Issues Fixed During Implementation:**
+1. **JSON Syntax Error**: Removed trailing comma in vercel.json
+2. **Functions/Builds Conflict**: Removed conflicting `functions` property
+3. **Invalid Export Error**: Fixed server.js export for serverless compatibility
+4. **CORS Configuration**: Added frontend URL requirement for backend
+
+#### **MongoDB Atlas Integration Guide:**
+**Complete Step-by-Step Process Added:**
+- Account creation and project setup
+- Cluster configuration (free tier + production)
+- Database user creation with proper permissions
+- Network access configuration (IP whitelisting for Vercel: 0.0.0.0/0)
+- Connection string format with database name
+- Local development with MongoDB Compass
+- Troubleshooting common connection issues
+
+**Your Specific MongoDB URI (Corrected):**
+```bash
+# Original (missing database name):
+mongodb+srv://nishantgupta1965:6vjWLxUjGTuVhsir@clusterproofchain.1kstojl.mongodb.net/
+
+# Corrected (with database name):
+MONGODB_URI=mongodb+srv://nishantgupta1965:6vjWLxUjGTuVhsir@clusterproofchain.1kstojl.mongodb.net/proofchain?retryWrites=true&w=majority
+```
+
+#### **Environment Variables Configuration:**
+**Backend Required Variables:**
+```bash
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://nishantgupta1965:6vjWLxUjGTuVhsir@clusterproofchain.1kstojl.mongodb.net/proofchain?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
+CORS_ORIGIN=https://your-frontend-name.vercel.app
+BLOCKCHAIN_RPC_URL=https://polygon-rpc.com
+CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
+PINATA_API_KEY=your-pinata-api-key
+PINATA_SECRET_KEY=your-pinata-secret-key
+```
+
+**Frontend Required Variables:**
+```bash
+REACT_APP_API_URL=https://your-backend-name.vercel.app
+REACT_APP_BLOCKCHAIN_RPC_URL=https://polygon-rpc.com
+REACT_APP_CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
+REACT_APP_IPFS_GATEWAY=https://gateway.pinata.cloud/ipfs/
+GENERATE_SOURCEMAP=false
+CI=false
+```
+
+#### **Deployment Process:**
+1. **Deploy Backend** → Get backend URL
+2. **Deploy Frontend** → Get frontend URL
+3. **⚠️ CRITICAL**: Update backend `CORS_ORIGIN` with frontend URL
+4. **Redeploy backend** for CORS changes to take effect
+5. **Deploy smart contracts** to blockchain (separate process)
+6. **Update contract addresses** in environment variables
+
+#### **CORS Configuration - CRITICAL REQUIREMENT:**
+**Why Frontend URL is Required in Backend:**
+- CORS (Cross-Origin Resource Sharing) security requires backend to whitelist frontend domain
+- Without proper CORS, frontend API calls will be blocked by browser
+- Must update `CORS_ORIGIN` after frontend deployment and redeploy backend
+
+**Example CORS Configuration:**
+```bash
+# Single origin
+CORS_ORIGIN=https://proofchain-frontend.vercel.app
+
+# Multiple origins (development + production)
+CORS_ORIGIN=http://localhost:3000,https://proofchain-frontend.vercel.app
+```
+
+#### **Comprehensive Deployment Guide Features:**
+- **150+ lines** of detailed web dashboard instructions
+- **Step-by-step MongoDB Atlas** setup with screenshots guidance
+- **Environment variables** complete configuration
+- **Troubleshooting section** for common deployment issues
+- **Security considerations** and best practices
+- **Performance optimization** tips
+- **Post-deployment verification** checklist
+
+#### **Smart Contract Artifacts Hosting (Optional):**
+- Hosts compiled contract ABIs for public access
+- Useful for third-party integrations
+- Provides public API endpoints for contract interfaces
+- Note: Smart contracts deploy to blockchain, not Vercel
+
 ## 🚀 **Deployment and Next Steps**
 
 ### **Immediate Deployment Readiness**

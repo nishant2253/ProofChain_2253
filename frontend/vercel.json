@@ -6,25 +6,14 @@
   "devCommand": "npm start",
   "installCommand": "npm install",
   "framework": "create-react-app",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
     "CI": "false",
     "GENERATE_SOURCEMAP": "false"
   },
-  "functions": {
-    "app/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
 }
