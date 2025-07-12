@@ -81,8 +81,10 @@ IPFS_PROJECT_ID=your-infura-ipfs-project-id
 IPFS_API_SECRET=your-infura-ipfs-secret
 IPFS_GATEWAY_URL=https://ipfs.infura.io/ipfs/
 
-# Security & CORS
-CORS_ORIGIN=https://your-frontend-domain.vercel.app
+# Security & CORS (IMPORTANT: Add your frontend URL)
+CORS_ORIGIN=https://your-frontend-name.vercel.app
+# For multiple origins (development + production)
+# CORS_ORIGIN=http://localhost:3000,https://your-frontend-name.vercel.app
 
 # Rate Limiting
 RATE_LIMIT_WINDOW=900000
@@ -97,6 +99,7 @@ DISABLE_REDIS=true
 1. **Click "Deploy"**
 2. **Wait for deployment** (usually 1-3 minutes)
 3. **Note your backend URL**: `https://your-backend-name.vercel.app`
+4. **⚠️ Important**: You'll need to update CORS_ORIGIN after frontend deployment
 
 ---
 
@@ -146,6 +149,15 @@ CI=false
 1. **Click "Deploy"**
 2. **Wait for deployment** (usually 2-5 minutes)
 3. **Note your frontend URL**: `https://your-frontend-name.vercel.app`
+
+### Step 5: Update Backend CORS Configuration
+**⚠️ CRITICAL STEP**: After frontend deployment, update backend environment:
+1. **Go to Backend Project** → Settings → Environment Variables
+2. **Update CORS_ORIGIN** with your actual frontend URL:
+   ```
+   CORS_ORIGIN=https://your-actual-frontend-name.vercel.app
+   ```
+3. **Redeploy backend** for changes to take effect
 
 ---
 
@@ -406,10 +418,28 @@ openssl rand -base64 32
    - Value: cname.vercel-dns.com
 
 ### Update CORS Configuration
-After getting final URLs, update backend environment:
+After getting final URLs, update backend environment variables:
+
+**For Vercel URLs:**
+```bash
+CORS_ORIGIN=https://your-frontend-name.vercel.app
+```
+
+**For Custom Domains:**
 ```bash
 CORS_ORIGIN=https://your-custom-domain.com
 ```
+
+**For Multiple Origins (Development + Production):**
+```bash
+CORS_ORIGIN=http://localhost:3000,https://your-frontend-name.vercel.app,https://your-custom-domain.com
+```
+
+**⚠️ Important Notes:**
+- Backend CORS must include frontend URL or requests will fail
+- Update CORS_ORIGIN whenever you change frontend domain
+- Redeploy backend after updating CORS configuration
+- Test API calls after CORS updates
 
 ---
 
