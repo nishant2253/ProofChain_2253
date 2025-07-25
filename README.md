@@ -15,7 +15,7 @@ ProofChain is a revolutionary decentralized platform that harnesses the power of
 
 ## 🌍 **Problem We're Solving**
 
-### **The Misinformation Crisis:**
+### **The Misinformation Crisis**
 
 - **Deepfakes & AI-generated content** flooding the internet
 - **Lack of reliable verification** mechanisms for digital content
@@ -84,8 +84,8 @@ ProofChain is a revolutionary decentralized platform that harnesses the power of
 - **Merkle tree verification** for user eligibility
 - **Multi-token support** (ETH, USDFC, FIL)
 
-
 ### **4. Access Application**
+
 - **Frontend**: http://localhost:5003
 - **Backend API**: http://localhost:3000/api
 - **Blockchain**: http://localhost:8545
@@ -106,21 +106,25 @@ ProofChain is a revolutionary decentralized platform that harnesses the power of
 ## 🔄 **Core Workflow**
 
 ### **1. Content Submission Process**
+
 ```
 User → Upload Content → IPFS Storage → Blockchain Registration → Voting Period Starts
 ```
 
-### **2. Voting Process** 
+### **2. Voting Process**
+
 ```
 User → Connect Wallet → Stake Tokens → Submit Vote → Blockchain Transaction → Database Record
 ```
 
 ### **3. Consensus & Rewards**
+
 ```
 Voting Ends → Results Calculated → 48hr Delay → Rewards Claimable → Reputation Updated
 ```
 
 ### **4. Key User Actions**
+
 - **Submit Content**: Upload files/text with metadata to IPFS
 - **Vote on Content**: Stake tokens (ETH, USDFC, FIL) with confidence levels
 - **Claim Rewards**: Collect earnings after 48-hour security delay
@@ -225,6 +229,7 @@ POST /api/blockchain/estimate-gas    # Estimate gas for transaction
 ## 🔗 **API Endpoints Reference**
 
 ### **Content Management**
+
 ```bash
 # Submit new content
 POST /api/content
@@ -241,6 +246,7 @@ GET /api/content/:id/commit?address=0x...
 ```
 
 ### **Voting & Consensus**
+
 ```bash
 # Submit vote (requires MetaMask transaction)
 POST /api/consensus/vote
@@ -254,6 +260,7 @@ GET /api/consensus/timeline
 ```
 
 ### **User Management**
+
 ```bash
 # Register/login user
 POST /api/users
@@ -282,6 +289,7 @@ POST /api/users/me/content/:contentId/claim-reward
 ```
 
 ### **Token Operations**
+
 ```bash
 # Get supported tokens
 GET /api/tokens/supported?activeOnly=true
@@ -293,6 +301,7 @@ GET /api/tokens/distribution
 POST /api/tokens/convert
 Body: { tokenType: 1, amount: "1000000000000000000" }
 ```
+
 - **MockUSDFC.sol**: Test USDFC token for development
 - **MockAggregatorV3.sol**: Price oracle for token valuation
 
@@ -615,7 +624,6 @@ npm start
 # Frontend application runs on http://localhost:5003
 ```
 
-
 3. **Add Localhost Network to MetaMask**:
 
    - Network Name: Localhost 8545
@@ -623,10 +631,11 @@ npm start
    - Chain ID: `31337`
    - Currency Symbol: `ETH`
    - Block Explorer: Not needed for localhost
-   
+
 ### **🗄️ MongoDB Compass Setup & Data Viewing**
 
 #### **Install MongoDB Compass:**
+
 ```bash
 # Download from: https://www.mongodb.com/products/compass
 # Or install via package manager:
@@ -640,18 +649,20 @@ sudo dpkg -i mongodb-compass_1.40.4_amd64.deb
 ```
 
 #### **Connect to Local MongoDB:**
+
 1. **Open MongoDB Compass**
 2. **Connection String**: `mongodb://localhost:27017`
 3. **Database Name**: `proofchain`
 4. **Click Connect**
 
 #### **Connect to MongoDB Atlas:**
+
 1. **Get Connection String** from Atlas dashboard
 2. **Format**: `mongodb+srv://username:password@cluster.mongodb.net/proofchain`
 3. **Replace** username, password, and cluster details
 4. **Click Connect**
 
-3. **Import Test Account**: Use one of the private keys shown in the Hardhat node output
+5. **Import Test Account**: Use one of the private keys shown in the Hardhat node output
 
 ### **Step 9: Access & Test Application**
 
@@ -745,6 +756,7 @@ npx hardhat run scripts/activateEthToken.js --network localhost
 ### **🚨 Port Issues & Process Management**
 
 #### **Kill Processes on Busy Ports:**
+
 ```bash
 # Check what's running on specific ports
 lsof -i :3000  # Backend port
@@ -766,6 +778,7 @@ ps aux | grep node
 ```
 
 #### **Clean Restart All Services:**
+
 ```bash
 # Kill all related processes
 sudo kill -9 $(lsof -t -i:3000,5003,8545)
@@ -780,6 +793,7 @@ cd frontend && npm start &
 ```
 
 #### **View ProofChain Data:**
+
 ```javascript
 // Collections you'll see in MongoDB Compass:
 proofchain/
@@ -792,6 +806,7 @@ proofchain/
 ```
 
 #### **Useful MongoDB Compass Queries:**
+
 ```javascript
 // Find all content items
 {}
@@ -815,6 +830,7 @@ proofchain/
 ### **🌐 Application Routes & Pages**
 
 #### **Frontend Route Structure:**
+
 ```javascript
 // Main Application Routes:
 http://localhost:5003/                    // Home/Dashboard
@@ -825,8 +841,10 @@ http://localhost:5003/profile/:address    // Public Profile View
 ```
 
 #### **📊 Dashboard Page (`/`)**
+
 **Purpose**: Main landing page with content overview
 **Features**:
+
 - ✅ **Content Feed**: List of all submitted content
 - ✅ **Voting Status**: Live/Finalized/Expired indicators
 - ✅ **Quick Stats**: Total content, active votes, consensus reached
@@ -835,13 +853,16 @@ http://localhost:5003/profile/:address    // Public Profile View
 - ✅ **Real-time Updates**: Auto-refresh every 30 seconds
 
 **Components Used**:
+
 - `ConsensusDashboard` - Main content grid
 - `VotingInterface` - Quick voting actions
 - `BlockchainVisualization` - Network status
 
 #### **📝 Submit Content Page (`/submit`)**
+
 **Purpose**: Upload and submit content for verification
 **Features**:
+
 - ✅ **File Upload**: Direct file upload to IPFS
 - ✅ **IPFS Hash Input**: Manual IPFS hash entry
 - ✅ **Metadata Form**: Title, description, content type
@@ -850,6 +871,7 @@ http://localhost:5003/profile/:address    // Public Profile View
 - ✅ **Transaction Tracking**: Blockchain submission status
 
 **Form Fields**:
+
 ```javascript
 {
   title: "Content title (required)",
@@ -861,8 +883,10 @@ http://localhost:5003/profile/:address    // Public Profile View
 ```
 
 #### **🔍 Content Detail Page (`/content/:id`)**
+
 **Purpose**: Detailed view and voting interface for specific content
 **Features**:
+
 - ✅ **Content Display**: Full content with IPFS integration
 - ✅ **Voting Interface**: REAL/FAKE voting with confidence
 - ✅ **Live Statistics**: Real-time vote counts and USD values
@@ -872,6 +896,7 @@ http://localhost:5003/profile/:address    // Public Profile View
 - ✅ **Share Options**: Social sharing and direct links
 
 **Voting Process**:
+
 1. **Connect Wallet** (MetaMask required)
 2. **Select Vote**: REAL or FAKE
 3. **Set Confidence**: 1-10 scale
@@ -880,8 +905,10 @@ http://localhost:5003/profile/:address    // Public Profile View
 6. **Track Status**: Real-time vote tracking
 
 #### **👤 Profile Pages (`/profile` & `/profile/:address`)**
+
 **Purpose**: User profile with content history and rewards
 **Features**:
+
 - ✅ **Profile Overview**: Username, reputation, join date
 - ✅ **My Content Tab**: All submitted content with consensus data
 - ✅ **Voting History**: Past votes and outcomes
@@ -891,6 +918,7 @@ http://localhost:5003/profile/:address    // Public Profile View
 - ✅ **Achievement Badges**: Verification status and milestones
 
 **Profile Tabs**:
+
 ```javascript
 // Tab Structure:
 ├── Overview          // Basic profile info and stats
@@ -902,10 +930,11 @@ http://localhost:5003/profile/:address    // Public Profile View
 ### **🐛 Common Issues & Solutions**
 
 #### **Backend Issues:**
+
 ```bash
 # MongoDB Connection Error
 Error: MongoNetworkError: failed to connect to server
-Solution: 
+Solution:
 - Check if MongoDB is running: sudo systemctl status mongod
 - Verify MONGODB_URI in .env
 - For Atlas: Check network access and credentials
@@ -929,6 +958,7 @@ Solution:
 ### **🚨 Critical Setup Issues**
 
 #### **1. Backend Server Won't Start**
+
 ```bash
 # Error: "Route.post() requires a callback function"
 # Fix: Check middleware imports in routes
@@ -937,6 +967,7 @@ cd backend && npm install
 ```
 
 #### **2. Content Submission Fails**
+
 ```bash
 # Error: "votingStartTime is not allowed"
 # Fix: Update validation middleware
@@ -944,6 +975,7 @@ cd backend && npm install
 ```
 
 #### **3. IPFS Upload Errors**
+
 ```bash
 # Error: "Invalid URL - ERR_ID:00004"
 # Fix: Configure Pinata JWT properly
@@ -951,6 +983,7 @@ cd backend && npm install
 ```
 
 #### **4. MetaMask Transaction Failures**
+
 ```bash
 # Error: "Voting period too short"
 # Fix: Ensure voting duration >= 1 hour
@@ -958,6 +991,7 @@ cd backend && npm install
 ```
 
 #### **5. Database Connection Issues**
+
 ```bash
 # Error: "MongoServerError"
 # Fix: Start MongoDB service
@@ -968,6 +1002,7 @@ sudo systemctl start mongod
 ### **⚡ Quick Fixes**
 
 #### **Contract Deployment Issues**
+
 ```bash
 # Reset blockchain state
 cd contracts-hardhat
@@ -977,6 +1012,7 @@ npm run node
 ```
 
 #### **Frontend Build Errors**
+
 ```bash
 cd frontend
 rm -rf node_modules package-lock.json
@@ -985,6 +1021,7 @@ npm start
 ```
 
 #### **Backend API Errors**
+
 ```bash
 cd backend
 # Check environment variables
@@ -994,6 +1031,7 @@ npm run dev
 ```
 
 #### **Frontend Issues:**
+
 ```bash
 # Wallet Connection Failed
 Error: No Ethereum provider found
@@ -1018,6 +1056,7 @@ Solution:
 ```
 
 #### **Smart Contract Issues:**
+
 ```bash
 # Deployment Fails
 Error: insufficient funds for intrinsic transaction cost
@@ -1044,6 +1083,7 @@ Solution:
 ### **📊 Performance Monitoring**
 
 #### **Check Service Health:**
+
 ```bash
 # Backend Health Check
 curl http://localhost:3000/api/tokens/supported
@@ -1059,6 +1099,7 @@ mongosh mongodb://localhost:27017/proofchain
 ```
 
 #### **Log Monitoring:**
+
 ```bash
 # Backend Logs
 cd backend && npm start | tee backend.log
@@ -1093,5 +1134,5 @@ If you find this project helpful, please give it a star! For questions or suppor
 ---
 
 **Built with ❤️ for a more truthful digital world**
- 
+
 # refresh
